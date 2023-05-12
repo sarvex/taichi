@@ -72,10 +72,7 @@ class Window:
         raise Exception("unrecognized event tag")
 
     def is_pressed(self, *keys):
-        for k in keys:
-            if self.window.is_pressed(k):
-                return True
-        return False
+        return any(self.window.is_pressed(k) for k in keys)
 
     def get_canvas(self):
         """Returns a canvas handle. See :class`~taichi.ui.canvas.Canvas` """

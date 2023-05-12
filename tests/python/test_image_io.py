@@ -17,16 +17,13 @@ from tests import test_utils
 @pytest.mark.parametrize('dt', [ti.u8])
 @test_utils.test(arch=get_host_arch_list())
 def test_image_io(resx, resy, comp, ext, is_field, dt):
-    if comp != 1:
-        shape = (resx, resy, comp)
-    else:
-        shape = (resx, resy)
+    shape = (resx, resy, comp) if comp != 1 else (resx, resy)
     if is_field:
         pixel_t = ti.field(dt, shape)
     pixel = np.random.randint(256, size=shape, dtype=to_numpy_type(dt))
     if is_field:
         pixel_t.from_numpy(pixel)
-    fn = test_utils.make_temp_file(suffix='.' + ext)
+    fn = test_utils.make_temp_file(suffix=f'.{ext}')
     if is_field:
         ti.imwrite(pixel_t, fn)
     else:
@@ -48,7 +45,7 @@ def test_image_io_vector(resx, resy, comp, ext, dt):
     pixel = np.random.rand(*shape, comp).astype(to_numpy_type(dt))
     pixel_t = ti.Vector.field(comp, dt, shape)
     pixel_t.from_numpy(pixel)
-    fn = test_utils.make_temp_file(suffix='.' + ext)
+    fn = test_utils.make_temp_file(suffix=f'.{ext}')
     ti.imwrite(pixel_t, fn)
     pixel_r = (ti.imread(fn).astype(to_numpy_type(dt)) + 0.5) / 256.0
     assert np.allclose(pixel_r, pixel, atol=2e-2)
@@ -68,7 +65,7 @@ def test_image_io_uint(resx, resy, comp, ext, dt):
     pixel = np.random.randint(256, size=(*shape, comp), dtype=np_type) * np_max
     pixel_t = ti.Vector.field(comp, dt, shape)
     pixel_t.from_numpy(pixel)
-    fn = test_utils.make_temp_file(suffix='.' + ext)
+    fn = test_utils.make_temp_file(suffix=f'.{ext}')
     ti.imwrite(pixel_t, fn)
     pixel_r = ti.imread(fn).astype(np_type) * np_max
     assert (pixel_r == pixel).all()

@@ -23,10 +23,7 @@ _yapf_config_path = os.path.join(repo_dir, 'misc', '.style.yapf')
 
 
 def has_suffix(f, suffixes):
-    for suf in suffixes:
-        if f.endswith('.' + suf):
-            return True
-    return False
+    return any(f.endswith(f'.{suf}') for suf in suffixes)
 
 
 def format_plain_text(fn):
@@ -48,9 +45,9 @@ def find_clang_format_bin():
     except AttributeError:
         pass
 
-    candidates = ['clang-format-10', 'clang-format']
     result = None
 
+    candidates = ['clang-format-10', 'clang-format']
     for c in candidates:
         try:
             if sp.run([c, '--version'], stdout=sp.DEVNULL,
@@ -60,11 +57,12 @@ def find_clang_format_bin():
         except:
             pass
     if result is None:
-        print(Fore.YELLOW +
-              'Did not find any clang-format executable, skipping C++ files',
-              file=sys.stderr)
+        print(
+            f'{Fore.YELLOW}Did not find any clang-format executable, skipping C++ files',
+            file=sys.stderr,
+        )
     else:
-        print('C++ formatter: {}{}'.format(Fore.GREEN, result))
+        print(f'C++ formatter: {Fore.GREEN}{result}')
     print(Style.RESET_ALL)
     find_clang_format_bin.clang_format_bin = result
     return result
@@ -147,12 +145,12 @@ def main(all=False, diff=None):
 
 def format_file(fn):
     clang_format_bin = find_clang_format_bin()
-    print('Formatting "{}"'.format(fn))
+    print(f'Formatting "{fn}"')
     if fn.endswith('.py'):
         format_py_file(fn)
         return True
     elif clang_format_bin and has_suffix(fn, ['cpp', 'h', 'c', 'cu', 'cuh']):
-        os.system('{} -i -style=file {}'.format(clang_format_bin, fn))
+        os.system(f'{clang_format_bin} -i -style=file {fn}')
         format_plain_text(fn)
         return True
     elif has_suffix(fn, [

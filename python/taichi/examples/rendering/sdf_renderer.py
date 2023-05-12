@@ -50,8 +50,8 @@ def out_dir(n):
 @ti.func
 def make_nested(f):
     f = f * 40
-    i = int(f)
     if f < 0:
+        i = int(f)
         if i % 2 == 1:
             f -= ti.floor(f)
         else:
@@ -153,9 +153,9 @@ def render():
 
 gui = ti.GUI('SDF Path Tracer', res)
 last_t = 0
+interval = 10
 for i in range(50000):
     render()
-    interval = 10
     if i % interval == 0 and i > 0:
         print("{:.2f} samples/s".format(interval / (time.time() - last_t)))
         last_t = time.time()

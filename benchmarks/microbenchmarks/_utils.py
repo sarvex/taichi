@@ -37,7 +37,7 @@ def tags2name(tag_list):
 def dtype_size(ti_dtype):
     dtype_size_dict = {ti.i32: 4, ti.i64: 8, ti.f32: 4, ti.f64: 8}
     if ti_dtype not in dtype_size_dict:
-        raise RuntimeError('Unsupported ti.dtype: ' + str(type(ti_dtype)))
+        raise RuntimeError(f'Unsupported ti.dtype: {str(type(ti_dtype))}')
     else:
         return dtype_size_dict[ti_dtype]
 

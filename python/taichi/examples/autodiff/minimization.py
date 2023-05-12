@@ -29,7 +29,7 @@ def main():
         y[i] = random.random()
 
     # Optimize with 100 gradient descent iterations
-    for k in range(100):
+    for _ in range(100):
         with ti.Tape(loss=L):
             reduce()
         print('Loss =', L[None])

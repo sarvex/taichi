@@ -35,13 +35,11 @@ def get_ffmpeg_path():
 def mp4_to_gif(input_fn, output_fn, framerate):
     # Generate the palette
     palette_name = 'palette.png'
-    if get_os_name() == 'win':
-        command = get_ffmpeg_path(
-        ) + f" -loglevel panic -i {input_fn} -vf 'palettegen' -y {palette_name}"
-    else:
-        command = get_ffmpeg_path(
-        ) + f" -loglevel panic -i {input_fn} -vf 'fps={framerate}," \
-            f"scale=320:640:flags=lanczos,palettegen' -y {palette_name}"
+    command = (
+        f"{get_ffmpeg_path()} -loglevel panic -i {input_fn} -vf 'palettegen' -y {palette_name}"
+        if get_os_name() == 'win'
+        else f"{get_ffmpeg_path()} -loglevel panic -i {input_fn} -vf 'fps={framerate},scale=320:640:flags=lanczos,palettegen' -y {palette_name}"
+    )
     # print command
     os.system(command)
 
@@ -78,7 +76,7 @@ class VideoManager:
         self.automatic_build = automatic_build
 
     def get_output_filename(self, suffix):
-        return os.path.join(self.directory, 'video' + suffix)
+        return os.path.join(self.directory, f'video{suffix}')
 
     def write_frame(self, img):
         if img.shape[0] % 2 != 0:
@@ -97,10 +95,12 @@ class VideoManager:
         self.frame_fns.append(fn)
         imwrite(img, os.path.join(self.frame_directory, fn))
         self.frame_counter += 1
-        if self.frame_counter % self.next_video_checkpoint == 0:
-            if self.automatic_build:
-                self.make_video()
-                self.next_video_checkpoint *= 2
+        if (
+            self.frame_counter % self.next_video_checkpoint == 0
+            and self.automatic_build
+        ):
+            self.make_video()
+            self.next_video_checkpoint *= 2
 
     def get_frame_directory(self):
         return self.frame_directory
@@ -116,10 +116,7 @@ class VideoManager:
 
     def make_video(self, mp4=True, gif=True):
         fn = self.get_output_filename('.mp4')
-        command = (get_ffmpeg_path() + f" -loglevel panic -framerate {self.framerate} -i ") + os.path.join(
-            self.frame_directory, FRAME_FN_TEMPLATE) + \
-                  " -s:v " + str(self.width) + 'x' + str(self.height) + \
-                  " -c:v libx264 -profile:v high -crf 1 -pix_fmt yuv420p -y " + fn
+        command = f"{get_ffmpeg_path()} -loglevel panic -framerate {self.framerate} -i {os.path.join(self.frame_directory, FRAME_FN_TEMPLATE)} -s:v {str(self.width)}x{str(self.height)} -c:v libx264 -profile:v high -crf 1 -pix_fmt yuv420p -y {fn}"
 
         os.system(command)
 
@@ -135,12 +132,8 @@ def interpolate_frames(frame_dir, mul=4):
     # TODO: remove dependency on cv2 here
     import cv2  # pylint: disable=C0415
     files = os.listdir(frame_dir)
-    images = []
     images_interpolated = []
-    for f in sorted(files):
-        if f.endswith('png'):
-            images.append(cv2.imread(f) / 255.0)  # pylint: disable=E1101
-
+    images = [cv2.imread(f) / 255.0 for f in sorted(files) if f.endswith('png')]
     for i in range(len(images) - 1):
         images_interpolated.append(images[i])
         for j in range(mul - 1):

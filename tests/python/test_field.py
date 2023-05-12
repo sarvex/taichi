@@ -92,11 +92,7 @@ def test_scalr_field_from_numpy_with_mismatch_shape(dtype, shape):
         ti.f64: np.float64,
         ti.i64: np.int64,
     }
-    # compose the mismatch shape for every ti.field.
-    # set the shape to (2, 3) by default, if the ti.field shape is a tuple, set it to 1.
-    mismatch_shape = (2, 3)
-    if isinstance(shape, tuple):
-        mismatch_shape = 1
+    mismatch_shape = 1 if isinstance(shape, tuple) else (2, 3)
     arr = np.empty(mismatch_shape, dtype=numpy_dtypes[dtype])
     with pytest.raises(ValueError):
         x.from_numpy(arr)

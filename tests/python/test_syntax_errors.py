@@ -31,8 +31,6 @@ def test_for_else():
     def func():
         for i in range(10):
             pass
-        else:
-            pass
 
     with pytest.raises(ti.TaichiCompilationError):
         func()
@@ -47,8 +45,6 @@ def test_while_else():
     @ti.kernel
     def func():
         while True:
-            pass
-        else:
             pass
 
     with pytest.raises(ti.TaichiCompilationError):

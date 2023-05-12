@@ -9,7 +9,7 @@ from tests import test_utils
 def run_mpm88_test():
     dim = 2
     N = 64
-    n_particles = N * N
+    n_particles = N**2
     n_grid = 128
     dx = 1 / n_grid
     inv_dx = 1 / dx
@@ -131,7 +131,7 @@ def test_mpm88_numpy_and_ndarray():
 
     dim = 2
     N = 64
-    n_particles = N * N
+    n_particles = N**2
     n_grid = 128
     dx = 1 / n_grid
     inv_dx = 1 / dx

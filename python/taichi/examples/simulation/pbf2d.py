@@ -77,7 +77,7 @@ ti.root.place(board_states)
 @ti.func
 def poly6_value(s, h):
     result = 0.0
-    if 0 < s and s < h:
+    if 0 < s < h:
         x = (h * h - s * s) / (h * h * h)
         result = poly6_factor * x * x * x
     return result
@@ -87,7 +87,7 @@ def poly6_value(s, h):
 def spiky_gradient(r, h):
     result = ti.Vector([0.0, 0.0])
     r_len = r.norm()
-    if 0 < r_len and r_len < h:
+    if 0 < r_len < h:
         x = (h - r_len) / (h * h * h)
         g_factor = spiky_grad_factor * x * x
         result = r * g_factor / r_len
@@ -112,8 +112,9 @@ def get_cell(pos):
 @ti.func
 def is_in_grid(c):
     # @c: Vector(i32)
-    return 0 <= c[0] and c[0] < grid_size[0] and 0 <= c[1] and c[
-        1] < grid_size[1]
+    return (
+        c[0] >= 0 and c[0] < grid_size[0] and c[1] >= 0 and c[1] < grid_size[1]
+    )
 
 
 @ti.func

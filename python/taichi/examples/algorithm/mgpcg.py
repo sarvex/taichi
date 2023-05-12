@@ -117,20 +117,20 @@ def smooth(l: ti.template(), phase: ti.template()):
 def apply_preconditioner():
     z[0].fill(0)
     for l in range(n_mg_levels - 1):
-        for i in range(pre_and_post_smoothing << l):
+        for _ in range(pre_and_post_smoothing << l):
             smooth(l, 0)
             smooth(l, 1)
         z[l + 1].fill(0)
         r[l + 1].fill(0)
         restrict(l)
 
-    for i in range(bottom_smoothing):
+    for _ in range(bottom_smoothing):
         smooth(n_mg_levels - 1, 0)
         smooth(n_mg_levels - 1, 1)
 
     for l in reversed(range(n_mg_levels - 1)):
         prolongate(l)
-        for i in range(pre_and_post_smoothing << l):
+        for _ in range(pre_and_post_smoothing << l):
             smooth(l, 1)
             smooth(l, 0)
 

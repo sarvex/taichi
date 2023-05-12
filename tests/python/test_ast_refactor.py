@@ -265,10 +265,7 @@ def test_if():
     @ti.kernel
     def foo(x: ti.i32) -> ti.i32:
         ret = 0
-        if x:
-            ret = 1
-        else:
-            ret = 0
+        ret = 1 if x else 0
         return ret
 
     assert foo(1)
@@ -280,10 +277,7 @@ def test_static_if():
     @ti.kernel
     def foo(x: ti.template()) -> ti.i32:
         ret = 0
-        if ti.static(x):
-            ret = 1
-        else:
-            ret = 0
+        ret = 1 if ti.static(x) else 0
         return ret
 
     assert foo(1)
@@ -462,7 +456,6 @@ def test_static_for_break():
             a[i] = 3
             if ti.static(i >= 5):
                 break
-                a[i] = 10
             a[i] = 5
 
     a = ti.field(ti.i32, shape=(n, ))
@@ -486,7 +479,6 @@ def test_static_grouped_for_break():
             a[I] = 3
             if ti.static(I[0] >= 3):
                 break
-                a[I] = 10
             a[I] = 5
 
     a = ti.field(ti.i32, shape=(n, n))
@@ -511,7 +503,6 @@ def test_static_for_continue():
             a[i] = 3
             if ti.static(i >= 5):
                 continue
-                a[i] = 10
             a[i] = 5
 
     a = ti.field(ti.i32, shape=(n, ))
@@ -533,7 +524,6 @@ def test_static_grouped_for_continue():
             a[I] = 3
             if ti.static(I[0] >= 3):
                 continue
-                a[I] = 10
             a[I] = 5
 
     a = ti.field(ti.i32, shape=(n, n))
@@ -557,7 +547,6 @@ def test_for_break():
                 a[i, j] = 3
                 if i >= 3:
                     break
-                    a[i, j] = 10
                 a[i, j] = 5
 
     a = ti.field(ti.i32, shape=(n, n))
@@ -583,7 +572,6 @@ def test_for_continue():
                 a[i, j] = 3
                 if i >= 3:
                     continue
-                    a[i, j] = 10
                 a[i, j] = 5
 
     a = ti.field(ti.i32, shape=(n, n))
@@ -871,9 +859,8 @@ def test_dictcomp():
         a = {i: i * i for i in range(n) if i % 3 if i % 2}
         ret = 0
         for i in ti.static(range(n)):
-            if ti.static(i % 3):
-                if ti.static(i % 2):
-                    ret += a[i]
+            if ti.static(i % 3) and ti.static(i % 2):
+                ret += a[i]
         return ret
 
     assert foo(10) == 1 * 1 + 5 * 5 + 7 * 7

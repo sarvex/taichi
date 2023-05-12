@@ -14,10 +14,7 @@ def test_static_if(val):
 
     @ti.kernel
     def static():
-        if ti.static(val > 0.5):
-            x[0] = 1
-        else:
-            x[0] = 0
+        x[0] = 1 if ti.static(val > 0.5) else 0
 
     static()
     assert x[0] == val
@@ -31,10 +28,7 @@ def test_static_if_error():
 
     @ti.kernel
     def static(val: float):
-        if ti.static(val > 0.5):
-            x[0] = 1
-        else:
-            x[0] = 0
+        x[0] = 1 if ti.static(val > 0.5) else 0
 
     with pytest.raises(ti.TaichiCompilationError,
                        match='must be compile-time constants'):

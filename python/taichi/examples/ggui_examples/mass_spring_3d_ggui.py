@@ -17,7 +17,7 @@ v = ti.Vector.field(3, float, (N, N))
 
 num_triangles = (N - 1) * (N - 1) * 2
 indices = ti.field(int, num_triangles * 3)
-vertices = ti.Vector.field(3, float, N * N)
+vertices = ti.Vector.field(3, float, N**2)
 
 
 def init_scene():
@@ -85,7 +85,7 @@ scene = ti.ui.Scene()
 camera = ti.ui.make_camera()
 
 while window.running:
-    for i in range(30):
+    for _ in range(30):
         step()
     set_vertices()
 

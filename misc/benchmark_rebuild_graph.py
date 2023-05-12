@@ -22,7 +22,7 @@ def foo():
     f[None] += 1
 
 
-for i in range(1000):
+for _ in range(1000):
     foo()
 
 impl.get_runtime().prog.benchmark_rebuild_graph()

@@ -28,10 +28,7 @@ def extract_doc(doc_filename=None):
             next_line = next_line.strip()
             if next_line.startswith('*'):
                 next_line = next_line[1:].strip()
-            if next_line == '':  # an empty line
-                current_doc += '\n'
-            else:
-                current_doc += ' ' + next_line
+            current_doc += '\n' if next_line == '' else f' {next_line}'
         current_doc = current_doc.strip()
 
         line = statements[doc_ends_at_line + 1]

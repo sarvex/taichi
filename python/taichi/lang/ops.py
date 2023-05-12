@@ -38,9 +38,7 @@ def unary(foo):
 
     @functools.wraps(foo)
     def wrapped(a):
-        if is_taichi_class(a):
-            return a._element_wise_unary(imp_foo)
-        return imp_foo(a)
+        return a._element_wise_unary(imp_foo) if is_taichi_class(a) else imp_foo(a)
 
     return wrapped
 
@@ -557,9 +555,7 @@ def raw_div(a, b):
         If `a` is a `int` and `b` is a `int`, then return `a//b`. Else return `a/b`.
     """
     def c_div(a, b):
-        if isinstance(a, int) and isinstance(b, int):
-            return a // b
-        return a / b
+        return a // b if isinstance(a, int) and isinstance(b, int) else a / b
 
     return _binary_operation(_ti_core.expr_div, c_div, a, b)
 

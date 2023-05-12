@@ -56,7 +56,7 @@ while gui.running:
     if gui.get_event() and gui.is_pressed(gui.SPACE):
         solar.initialize_particles()  # reinitialize when space bar pressed.
 
-    for i in range(10):  # Time integration
+    for _ in range(10):
         solar.integrate()
 
     solar.render(gui)

@@ -5,7 +5,7 @@ ti.init()
 
 @ti.func
 def func3():
-    ti.static_assert(1 + 1 == 3)
+    ti.static_assert(1 == 2)
 
 
 @ti.func

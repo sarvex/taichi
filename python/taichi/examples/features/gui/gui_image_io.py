@@ -17,7 +17,7 @@ paint()
 pixel = pixel.to_numpy()
 ti.imshow(pixel, 'Random Generated')
 for ext in ['bmp', 'png', 'jpg']:
-    fn = 'taichi-example-random-img.' + ext
+    fn = f'taichi-example-random-img.{ext}'
     ti.imwrite(pixel, fn)
     pixel_r = ti.imread(fn)
     if ext != 'jpg':

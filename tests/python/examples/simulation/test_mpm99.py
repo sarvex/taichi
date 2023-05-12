@@ -9,8 +9,8 @@ def test_mpm99():
     from taichi.examples.simulation.mpm99 import dt, initialize, substep
 
     initialize()
-    for i in range(FRAMES):
-        for s in range(int(2e-3 // dt)):
+    for _ in range(FRAMES):
+        for _ in range(int(2e-3 // dt)):
             substep()
 
 
@@ -26,8 +26,8 @@ def video_mpm99(result_dir):
                  res=512,
                  background_color=0x112F41,
                  show_gui=False)
-    for i in range(FRAMES):
-        for s in range(int(2e-3 // dt)):
+    for _ in range(FRAMES):
+        for _ in range(int(2e-3 // dt)):
             substep()
         gui.circles(x.to_numpy(),
                     radius=1.5,

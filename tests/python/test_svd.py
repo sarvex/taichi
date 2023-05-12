@@ -43,11 +43,7 @@ def _test_svd(dt, n):
         VtV[None] = V[None].transpose() @ V[None]
         A_reconstructed[None] = U[None] @ sigma[None] @ V[None].transpose()
 
-    if n == 3:
-        A[None] = [[1, 1, 3], [9, -3, 2], [-3, 4, 2]]
-    else:
-        A[None] = [[1, 1], [2, 3]]
-
+    A[None] = [[1, 1, 3], [9, -3, 2], [-3, 4, 2]] if n == 3 else [[1, 1], [2, 3]]
     run()
 
     tol = 1e-5 if dt == ti.f32 else 1e-12

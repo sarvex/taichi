@@ -121,7 +121,7 @@ def main():
     initialize()
     gui = ti.GUI("Taichi MLS-MPM-99", res=512, background_color=0x112F41)
     while not gui.get_event(ti.GUI.ESCAPE, ti.GUI.EXIT):
-        for s in range(int(2e-3 // dt)):
+        for _ in range(int(2e-3 // dt)):
             substep()
         gui.circles(x.to_numpy(),
                     radius=1.5,

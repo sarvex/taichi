@@ -143,10 +143,11 @@ class Func:
         self.argument_names = []
         self.return_type = None
         self.extract_arguments()
-        self.template_slot_locations = []
-        for i, anno in enumerate(self.argument_annotations):
-            if isinstance(anno, template):
-                self.template_slot_locations.append(i)
+        self.template_slot_locations = [
+            i
+            for i, anno in enumerate(self.argument_annotations)
+            if isinstance(anno, template)
+        ]
         self.mapper = TaichiCallableTemplateMapper(
             self.argument_annotations, self.template_slot_locations)
         self.taichi_functions = {}  # The |Function| class in C++
@@ -178,20 +179,24 @@ class Func:
             args=args,
             ast_builder=impl.get_runtime().prog.current_ast_builder())
         ret = transform_tree(tree, ctx)
-        if not impl.get_runtime().experimental_real_function:
-            if self.return_type and not ctx.returned:
-                raise TaichiSyntaxError(
-                    "Function has a return type but does not have a return statement"
-                )
+        if (
+            not impl.get_runtime().experimental_real_function
+            and self.return_type
+            and not ctx.returned
+        ):
+            raise TaichiSyntaxError(
+                "Function has a return type but does not have a return statement"
+            )
         return ret
 
     def func_call_rvalue(self, key, args):
         # Skip the template args, e.g., |self|
         assert impl.get_runtime().experimental_real_function
-        non_template_args = []
-        for i, anno in enumerate(self.argument_annotations):
-            if not isinstance(anno, template):
-                non_template_args.append(args[i])
+        non_template_args = [
+            args[i]
+            for i, anno in enumerate(self.argument_annotations)
+            if not isinstance(anno, template)
+        ]
         non_template_args = impl.make_expr_group(non_template_args)
         return Expr(
             _ti_core.make_func_call_expr(
@@ -243,13 +248,12 @@ class Func:
                     raise TaichiSyntaxError(
                         f'Taichi function `{self.func.__name__}` parameter `{arg_name}` must be type annotated'
                     )
-            else:
-                if not id(annotation
-                          ) in primitive_types.type_ids and not isinstance(
-                              annotation, template):
-                    raise TaichiSyntaxError(
-                        f'Invalid type annotation (argument {i}) of Taichi function: {annotation}'
-                    )
+            elif id(annotation) not in primitive_types.type_ids and not isinstance(
+                annotation, template
+            ):
+                raise TaichiSyntaxError(
+                    f'Invalid type annotation (argument {i}) of Taichi function: {annotation}'
+                )
             self.argument_annotations.append(annotation)
             self.argument_names.append(param.name)
 
@@ -311,9 +315,10 @@ class TaichiCallableTemplateMapper:
         return '#'
 
     def extract(self, args):
-        extracted = []
-        for arg, anno in zip(args, self.annotations):
-            extracted.append(self.extract_arg(arg, anno))
+        extracted = [
+            self.extract_arg(arg, anno)
+            for arg, anno in zip(args, self.annotations)
+        ]
         return tuple(extracted)
 
     def lookup(self, args):
@@ -333,10 +338,9 @@ def _get_global_vars(_func):
     # Discussions: https://github.com/taichi-dev/taichi/issues/282
     global_vars = _func.__globals__.copy()
 
-    freevar_names = _func.__code__.co_freevars
-    closure = _func.__closure__
-    if closure:
+    if closure := _func.__closure__:
         freevar_values = list(map(lambda x: x.cell_contents, closure))
+        freevar_names = _func.__code__.co_freevars
         for name, value in zip(freevar_names, freevar_values):
             global_vars[name] = value
 
@@ -357,10 +361,11 @@ class Kernel:
         self.return_type = None
         self.classkernel = _classkernel
         self.extract_arguments()
-        self.template_slot_locations = []
-        for i, anno in enumerate(self.argument_annotations):
-            if isinstance(anno, template):
-                self.template_slot_locations.append(i)
+        self.template_slot_locations = [
+            i
+            for i, anno in enumerate(self.argument_annotations)
+            if isinstance(anno, template)
+        ]
         self.mapper = TaichiCallableTemplateMapper(
             self.argument_annotations, self.template_slot_locations)
         impl.get_runtime().kernels.append(self)
@@ -408,19 +413,15 @@ class Kernel:
                 else:
                     raise TaichiSyntaxError(
                         'Taichi kernels parameters must be type annotated')
-            else:
-                if isinstance(annotation, (template, any_arr)):
-                    pass
-                elif id(annotation) in primitive_types.type_ids:
-                    pass
-                elif isinstance(annotation, sparse_matrix_builder):
-                    pass
-                elif isinstance(annotation, MatrixType):
-                    pass
-                else:
-                    raise TaichiSyntaxError(
-                        f'Invalid type annotation (argument {i}) of Taichi kernel: {annotation}'
-                    )
+            elif (
+                not isinstance(annotation, (template, any_arr))
+                and id(annotation) not in primitive_types.type_ids
+                and not isinstance(annotation, sparse_matrix_builder)
+                and not isinstance(annotation, MatrixType)
+            ):
+                raise TaichiSyntaxError(
+                    f'Invalid type annotation (argument {i}) of Taichi kernel: {annotation}'
+                )
             self.argument_annotations.append(annotation)
             self.argument_names.append(param.name)
 
@@ -459,11 +460,14 @@ class Kernel:
             try:
                 ctx.ast_builder = kernel_cxx.ast_builder()
                 transform_tree(tree, ctx)
-                if not impl.get_runtime().experimental_real_function:
-                    if self.return_type and not ctx.returned:
-                        raise TaichiSyntaxError(
-                            "Kernel has a return type but does not have a return statement"
-                        )
+                if (
+                    not impl.get_runtime().experimental_real_function
+                    and self.return_type
+                    and not ctx.returned
+                ):
+                    raise TaichiSyntaxError(
+                        "Kernel has a return type but does not have a return statement"
+                    )
             finally:
                 self.runtime.inside_kernel = False
                 self.runtime.current_kernel = None
@@ -656,7 +660,7 @@ class Kernel:
                 """opt_level = 1 is enforced to enable gradient computation."""
             )
             impl.current_cfg().opt_level = 1
-        assert len(kwargs) == 0, 'kwargs not supported for Taichi kernels'
+        assert not kwargs, 'kwargs not supported for Taichi kernels'
         key = self.ensure_compiled(*args)
         return self.compiled_functions[key](*args)
 
@@ -826,26 +830,16 @@ def data_oriented(cls):
         method = cls.__dict__.get(item, None)
         is_property = method.__class__ == property
         is_staticmethod = method.__class__ == staticmethod
-        if is_property:
-            x = method.fget
-        else:
-            x = super(cls, self).__getattribute__(item)
+        x = method.fget if is_property else super(cls, self).__getattribute__(item)
         if hasattr(x, '_is_wrapped_kernel'):
-            if inspect.ismethod(x):
-                wrapped = x.__func__
-            else:
-                wrapped = x
+            wrapped = x.__func__ if inspect.ismethod(x) else x
             wrapped._is_staticmethod = is_staticmethod
             assert inspect.isfunction(wrapped)
             if wrapped._is_classkernel:
                 ret = _BoundedDifferentiableMethod(self, wrapped)
                 ret.__name__ = wrapped.__name__
-                if is_property:
-                    return ret()
-                return ret
-        if is_property:
-            return x(self)
-        return x
+                return ret() if is_property else ret
+        return x(self) if is_property else x
 
     cls.__getattribute__ = _getattr
     cls._data_oriented = True

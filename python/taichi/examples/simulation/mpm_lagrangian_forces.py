@@ -161,7 +161,7 @@ def main():
     vertices_ = vertices.to_numpy()
 
     while gui.running and not gui.get_event(gui.ESCAPE):
-        for s in range(int(1e-2 // dt)):
+        for _ in range(int(1e-2 // dt)):
             grid_m.fill(0)
             grid_v.fill(0)
             # Note that we are now differentiating the total energy w.r.t. the particle position.

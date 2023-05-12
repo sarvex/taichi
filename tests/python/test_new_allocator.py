@@ -70,13 +70,3 @@ def test_matrix():
 @test_utils.test()
 def test_alloc_in_kernel():
     return  # build bots may not have this much memory to tests...
-    x = ti.field(ti.f32)
-
-    ti.root.pointer(ti.i, 8192).dense(ti.i, 1024 * 1024).place(x)
-
-    @ti.kernel
-    def touch():
-        for i in range(4096):
-            x[i * 1024 * 1024] = 1
-
-    touch()

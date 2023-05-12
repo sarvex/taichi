@@ -10,7 +10,7 @@ def calc_pi() -> ti.f32:
     term = 1.0
     sum = 0.0
     divisor = 1
-    for i in ti.static(range(10)):
+    for _ in ti.static(range(10)):
         sum += term / divisor
         term *= -1 / 3
         divisor += 2

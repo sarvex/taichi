@@ -49,7 +49,7 @@ class ForLoopCycle(BenchmarkItem):
         self._items = {}
         for i in range(1, 7):
             cycles = 4 * pow(2, i)  # [8 16 32 64 128 256]
-            self._items['threadloop' + str(cycles)] = cycles
+            self._items[f'threadloop{str(cycles)}'] = cycles
 
 
 class MathOpsPlan(BenchmarkPlan):

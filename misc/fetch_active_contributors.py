@@ -13,9 +13,7 @@ def print_active_contributors():
             f'{api_prefix}/contributors?per_page={per_page}&page={page}').json(
             )
 
-        for c in contributors_json:
-            contributors.append(c['login'])
-
+        contributors.extend(c['login'] for c in contributors_json)
         if len(contributors_json) == 0:
             break
         page += 1

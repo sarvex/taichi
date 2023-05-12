@@ -81,10 +81,10 @@ def new_particle(pos_x: ti.f32, pos_y: ti.f32, fixed_: ti.i32):
     fixed[new_particle_id] = fixed_
     num_particles[None] += 1
 
+    connection_radius = 0.15
     # Connect with existing particles
     for i in range(new_particle_id):
         dist = (x[new_particle_id] - x[i]).norm()
-        connection_radius = 0.15
         if dist < connection_radius:
             # Connect the new particle with particle i
             rest_length[i, new_particle_id] = 0.1
@@ -144,7 +144,7 @@ def main():
             attract(cursor_pos[0], cursor_pos[1])
 
         if not paused[None]:
-            for step in range(substeps):
+            for _ in range(substeps):
                 substep()
 
         X = x.to_numpy()
@@ -162,13 +162,11 @@ def main():
             gui.circle(pos=X[i], color=c, radius=5)
 
         gui.text(
-            content=
-            f'Left click: add mass point (with shift to fix); Right click: attract',
+            content='Left click: add mass point (with shift to fix); Right click: attract',
             pos=(0, 0.99),
-            color=0x0)
-        gui.text(content=f'C: clear all; Space: pause',
-                 pos=(0, 0.95),
-                 color=0x0)
+            color=0x0,
+        )
+        gui.text(content='C: clear all; Space: pause', pos=(0, 0.95), color=0x0)
         gui.text(content=f'Y: Spring Young\'s modulus {spring_Y[None]:.1f}',
                  pos=(0, 0.9),
                  color=0x0)

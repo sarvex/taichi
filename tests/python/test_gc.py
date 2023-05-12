@@ -76,7 +76,7 @@ def test_dynamic_gc():
 
     assert L._num_dynamically_allocated == 0
 
-    for i in range(100):
+    for _ in range(100):
         x[1024] = 1
         L.deactivate_all()
         assert L._num_dynamically_allocated <= 2

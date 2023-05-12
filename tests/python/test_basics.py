@@ -54,10 +54,7 @@ def test_if():
     @ti.kernel
     def if_test():
         for i in x:
-            if i < 100:
-                x[i] = 100
-            else:
-                x[i] = i
+            x[i] = 100 if i < 100 else i
 
     if_test()
 
@@ -67,10 +64,7 @@ def test_if():
     @ti.kernel
     def if_test2():
         for i in x:
-            if i < 100:
-                x[i] = i
-            else:
-                x[i] = 100
+            x[i] = i if i < 100 else 100
 
     if_test2()
 

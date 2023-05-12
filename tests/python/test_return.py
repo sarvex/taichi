@@ -35,16 +35,8 @@ def _test_binary_func_ret(dt1, dt2, dt3, castor):
     def func(a: dt1, b: dt2) -> dt3:
         return a * b
 
-    if ti.types.is_integral(dt1):
-        xs = list(range(4))
-    else:
-        xs = [0.2, 0.4, 0.8, 1.0]
-
-    if ti.types.is_integral(dt2):
-        ys = list(range(4))
-    else:
-        ys = [0.2, 0.4, 0.8, 1.0]
-
+    xs = list(range(4)) if ti.types.is_integral(dt1) else [0.2, 0.4, 0.8, 1.0]
+    ys = list(range(4)) if ti.types.is_integral(dt2) else [0.2, 0.4, 0.8, 1.0]
     for x, y in zip(xs, ys):
         assert func(x, y) == test_utils.approx(castor(x * y))
 
@@ -75,10 +67,7 @@ def test_return_in_static_if():
 def test_func_multiple_return():
     @ti.func
     def safe_sqrt(a):
-        if a > 0:
-            return ti.sqrt(a)
-        else:
-            return 0.0
+        return ti.sqrt(a) if a > 0 else 0.0
 
     @ti.kernel
     def kern(a: float):

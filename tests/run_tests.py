@@ -43,9 +43,9 @@ def _test_python(args):
         for f in args.files:
             # auto-complete file names
             if not f.startswith('test_'):
-                f = 'test_' + f
+                f = f'test_{f}'
             if not f.endswith('.py'):
-                f = f + '.py'
+                f = f'{f}.py'
             file = os.path.join(test_dir, f)
             file_38 = os.path.join(test_dir_38, f)
             has_tests = False
@@ -96,19 +96,17 @@ def _test_python(args):
     if args.show_output:
         pytest_args += ['-s']
         print(
-            f'Due to how pytest-xdist is implemented, the -s option does not work with multiple thread...'
+            'Due to how pytest-xdist is implemented, the -s option does not work with multiple thread...'
         )
-    else:
-        if int(threads) > 1:
-            pytest_args += ['-n', str(threads)]
+    elif int(threads) > 1:
+        pytest_args += ['-n', str(threads)]
     import pytest  # pylint: disable=C0415
     return int(pytest.main(pytest_args))
 
 
 def test():
     """Run the tests"""
-    parser = argparse.ArgumentParser(
-        description=f"Run taichi cpp & python tess")
+    parser = argparse.ArgumentParser(description="Run taichi cpp & python tess")
     parser.add_argument('files',
                         nargs='*',
                         help='Test name(s) to be run, e.g. "cli"')
@@ -208,7 +206,7 @@ def test():
     if args.arch:
         arch = args.arch
         if args.exclusive:
-            arch = '^' + arch
+            arch = f'^{arch}'
         print(f'Running on Arch={arch}')
         os.environ['TI_WANTED_ARCHS'] = arch
 

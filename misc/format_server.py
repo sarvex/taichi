@@ -19,7 +19,7 @@ class TaichiFormatServer(BaseHTTPRequestHandler):
         return content.encode("utf8")
 
     def writeln(self, f):
-        self.wfile.write(self._html(f + '<br>'))
+        self.wfile.write(self._html(f'{f}<br>'))
 
     def exec(self, cmd):
         self.writeln(f">>> {cmd}")
@@ -31,10 +31,10 @@ class TaichiFormatServer(BaseHTTPRequestHandler):
 
     def render_index(self):
         pulls = requests.get(
-            f'https://api.github.com/repos/taichi-dev/taichi/pulls?state=open'
+            'https://api.github.com/repos/taichi-dev/taichi/pulls?state=open'
         ).json()
         self.writeln(
-            f'Click to auto-format PR. <b>[Please do not click if the PR is not owned/reviewed by you.]</b>'
+            'Click to auto-format PR. <b>[Please do not click if the PR is not owned/reviewed by you.]</b>'
         )
         print(pulls)
         for pr in pulls:
@@ -90,10 +90,10 @@ class TaichiFormatServer(BaseHTTPRequestHandler):
         fork_commit = commits[num_commits]
         self.exec(f'ti format {fork_commit}')
         self.exec('git add --all')
-        self.exec(f'git commit -m "[skip ci] enforce code format"')
+        self.exec('git commit -m "[skip ci] enforce code format"')
         self.exec(f'git push {user_id} {user_id}-{branch_name}:{branch_name}')
 
-        self.exec(f'git checkout master')
+        self.exec('git checkout master')
 
 
 def run(addr, port):

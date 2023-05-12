@@ -9,17 +9,17 @@ vbo_field_cache = {}
 
 
 def get_vbo_field(vertices):
-    if vertices not in vbo_field_cache:
-        N = vertices.shape[0]
-        pos = 3
-        normal = 3
-        tex_coord = 2
-        color = 4
-        vertex_stride = pos + normal + tex_coord + color
-        vbo = Vector.field(vertex_stride, f32, shape=(N, ))
-        vbo_field_cache[vertices] = vbo
-        return vbo
-    return vbo_field_cache[vertices]
+    if vertices in vbo_field_cache:
+        return vbo_field_cache[vertices]
+    N = vertices.shape[0]
+    pos = 3
+    normal = 3
+    tex_coord = 2
+    color = 4
+    vertex_stride = pos + normal + tex_coord + color
+    vbo = Vector.field(vertex_stride, f32, shape=(N, ))
+    vbo_field_cache[vertices] = vbo
+    return vbo
 
 
 @kernel
@@ -41,12 +41,11 @@ def fill_vbo(vbo: template(), value: template(), offset: template(),
 def validate_input_field(f, name):
     if f.dtype != f32:
         raise Exception(f"{name} needs to have dtype f32")
-    if hasattr(f, 'n'):
-        if f.m != 1:
-            raise Exception(
-                f'{name} needs to be a Vector field (matrix with 1 column)')
-    else:
+    if not hasattr(f, 'n'):
         raise Exception(f'{name} needs to be a Vector field')
+    if f.m != 1:
+        raise Exception(
+            f'{name} needs to be a Vector field (matrix with 1 column)')
     if len(f.shape) != 1:
         raise Exception(f"the shape of {name} needs to be 1-dimensional")
 
@@ -74,7 +73,7 @@ def copy_texcoords_to_vbo(vbo, texcoords):
 
 def copy_colors_to_vbo(vbo, colors):
     validate_input_field(colors, "colors")
-    if colors.n != 3 and colors.n != 4:
+    if colors.n not in [3, 4]:
         raise Exception('colors can only be 3D/4D vector fields')
     copy_to_vbo(vbo, colors, 8, colors.n)
     if colors.n == 3:

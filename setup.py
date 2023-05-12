@@ -67,7 +67,7 @@ def get_os_name():
         return 'linux'
     elif 'bsd' in name.lower():
         return 'unix'
-    assert False, "Unknown platform name %s" % name
+    assert False, f"Unknown platform name {name}"
 
 
 def remove_tmp(taichi_dir):
@@ -153,7 +153,7 @@ class CMakeBuild(build_ext):
 
         build_args = ['--config', cfg]
 
-        cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
+        cmake_args += [f'-DCMAKE_BUILD_TYPE={cfg}']
 
         # Assuming Makefiles
         if get_os_name() != 'win':
@@ -190,8 +190,7 @@ class CMakeBuild(build_ext):
         os.makedirs(runtime_dir, exist_ok=True)
         os.makedirs(core_dir, exist_ok=True)
 
-        if (get_os_name() == 'linux' or get_os_name() == 'unix'
-                or get_os_name() == 'osx'):
+        if get_os_name() in ['linux', 'unix', 'osx']:
             remove_files_with_extension(core_dir, ".so")
         else:
             remove_files_with_extension(core_dir, ".pyd")
@@ -199,7 +198,7 @@ class CMakeBuild(build_ext):
             remove_files_with_extension(runtime_dir, ".dylib")
         remove_files_with_extension(runtime_dir, ".bc")
 
-        if get_os_name() == 'linux' or get_os_name() == 'unix':
+        if get_os_name() in ['linux', 'unix']:
             self.copy_file(os.path.join(self.build_temp, 'libtaichi_core.so'),
                            os.path.join(core_dir, 'taichi_core.so'))
         elif get_os_name() == 'osx':

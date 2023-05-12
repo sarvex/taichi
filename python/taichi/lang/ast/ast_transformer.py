@@ -162,9 +162,7 @@ class ASTTransformer(Builder):
             return True
         if isinstance(node, ast.Index) and isinstance(node.value.ptr, tuple):
             return True
-        if isinstance(node.ptr, tuple):
-            return True
-        return False
+        return isinstance(node.ptr, tuple)
 
     @staticmethod
     def build_Subscript(ctx, node):
@@ -192,7 +190,7 @@ class ASTTransformer(Builder):
         dic = {}
         for key, value in zip(node.keys, node.values):
             if key is None:
-                dic.update(build_stmt(ctx, value))
+                dic |= build_stmt(ctx, value)
             else:
                 dic[build_stmt(ctx, key)] = build_stmt(ctx, value)
         node.ptr = dic
@@ -288,10 +286,7 @@ class ASTTransformer(Builder):
     @staticmethod
     def build_keyword(ctx, node):
         build_stmt(ctx, node.value)
-        if node.arg is None:
-            node.ptr = node.value.ptr
-        else:
-            node.ptr = {node.arg: node.value.ptr}
+        node.ptr = node.value.ptr if node.arg is None else {node.arg: node.value.ptr}
         return node.ptr
 
     @staticmethod
@@ -378,8 +373,7 @@ class ASTTransformer(Builder):
         args = []
         for arg in node.args:
             if isinstance(arg, ast.Starred):
-                for i in arg.ptr:
-                    args.append(i)
+                args.extend(iter(arg.ptr))
             else:
                 args.append(arg.ptr)
         keywords = dict(ChainMap(*[keyword.ptr for keyword in node.keywords]))
@@ -492,10 +486,12 @@ class ASTTransformer(Builder):
 
     @staticmethod
     def build_Return(ctx, node):
-        if not impl.get_runtime().experimental_real_function:
-            if ctx.is_in_non_static_control_flow():
-                raise TaichiSyntaxError(
-                    "Return inside non-static if/for is not supported")
+        if (
+            not impl.get_runtime().experimental_real_function
+            and ctx.is_in_non_static_control_flow()
+        ):
+            raise TaichiSyntaxError(
+                "Return inside non-static if/for is not supported")
         build_stmt(ctx, node.value)
         if ctx.is_kernel or impl.get_runtime().experimental_real_function:
             # TODO: check if it's at the end of a kernel, throw TaichiSyntaxError if not
@@ -679,7 +675,7 @@ class ASTTransformer(Builder):
             ast.NotIn: lambda l, r: l not in r,
         }
         if ctx.is_in_static_scope():
-            ops = {**ops, **ops_static}
+            ops |= ops_static
         operands = [node.left.ptr
                     ] + [comparator.ptr for comparator in node.comparators]
         val = True
@@ -704,14 +700,18 @@ class ASTTransformer(Builder):
     def get_decorator(ctx, node):
         if not isinstance(node, ast.Call):
             return ''
-        for wanted, name in [
-            (impl.static, 'static'),
-            (impl.grouped, 'grouped'),
-            (ndrange, 'ndrange'),
-        ]:
-            if ASTResolver.resolve_to(node.func, wanted, ctx.global_vars):
-                return name
-        return ''
+        return next(
+            (
+                name
+                for wanted, name in [
+                    (impl.static, 'static'),
+                    (impl.grouped, 'grouped'),
+                    (ndrange, 'ndrange'),
+                ]
+                if ASTResolver.resolve_to(node.func, wanted, ctx.global_vars)
+            ),
+            '',
+        )
 
     @staticmethod
     def get_for_loop_targets(node):
@@ -889,8 +889,6 @@ class ASTTransformer(Builder):
                 ctx.create_variable(
                     target, matrix.Vector(loop_indices,
                                           dt=primitive_types.i32))
-                build_stmts(ctx, node.body)
-                ctx.ast_builder.end_frontend_struct_for()
             else:
                 _vars = []
                 for name in targets:
@@ -901,8 +899,8 @@ class ASTTransformer(Builder):
                 expr_group = expr.make_expr_group(*_vars)
                 impl.begin_frontend_struct_for(ctx.ast_builder, expr_group,
                                                loop_var)
-                build_stmts(ctx, node.body)
-                ctx.ast_builder.end_frontend_struct_for()
+            build_stmts(ctx, node.body)
+            ctx.ast_builder.end_frontend_struct_for()
         return None
 
     @staticmethod
@@ -940,7 +938,7 @@ class ASTTransformer(Builder):
         with ctx.variable_scope_guard():
             ctx.mesh = node.iter.ptr.mesh
             assert isinstance(ctx.mesh, impl.MeshInstance)
-            loop_name = node.target.id + '_index__'
+            loop_name = f'{node.target.id}_index__'
             loop_var = expr.Expr(_ti_core.make_id_expr(''))
             ctx.create_variable(loop_name, loop_var)
             begin = expr.Expr(0)
@@ -1003,8 +1001,11 @@ class ASTTransformer(Builder):
                     if not _ti_core.is_extension_supported(
                             impl.default_cfg().arch, _ti_core.Extension.mesh):
                         raise Exception(
-                            'Backend ' + str(impl.default_cfg().arch) +
-                            ' doesn\'t support MeshTaichi extension')
+                            (
+                                f'Backend {str(impl.default_cfg().arch)}'
+                                + ' doesn\'t support MeshTaichi extension'
+                            )
+                        )
                     return ASTTransformer.build_mesh_for(ctx, node)
                 if isinstance(node.iter.ptr, mesh.MeshRelationAccessProxy):
                     return ASTTransformer.build_nested_mesh_for(ctx, node)
@@ -1120,10 +1121,9 @@ class ASTTransformer(Builder):
             return False
         if isinstance(msg.left, ast.Str):
             return True
-        if isinstance(msg.left, ast.Constant) and isinstance(
-                msg.left.value, str):
-            return True
-        return False
+        return isinstance(msg.left, ast.Constant) and isinstance(
+            msg.left.value, str
+        )
 
     @staticmethod
     def _handle_string_mod_args(ctx, node):
@@ -1136,19 +1136,18 @@ class ASTTransformer(Builder):
     @staticmethod
     def build_Assert(ctx, node):
         extra_args = []
-        if node.msg is not None:
-            if isinstance(node.msg, ast.Constant):
-                msg = node.msg.value
-            elif isinstance(node.msg, ast.Str):
-                msg = node.msg.s
-            elif ASTTransformer._is_string_mod_args(node.msg):
-                msg, extra_args = ASTTransformer._handle_string_mod_args(
-                    ctx, node.msg)
-            else:
-                raise ValueError(
-                    f"assert info must be constant, not {ast.dump(node.msg)}")
-        else:
+        if node.msg is None:
             msg = astor.to_source(node.test)
+        elif isinstance(node.msg, ast.Constant):
+            msg = node.msg.value
+        elif isinstance(node.msg, ast.Str):
+            msg = node.msg.s
+        elif ASTTransformer._is_string_mod_args(node.msg):
+            msg, extra_args = ASTTransformer._handle_string_mod_args(
+                ctx, node.msg)
+        else:
+            raise ValueError(
+                f"assert info must be constant, not {ast.dump(node.msg)}")
         test = build_stmt(ctx, node.test)
         impl.ti_assert(test, msg.strip(), extra_args)
         return None

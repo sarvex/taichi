@@ -38,7 +38,7 @@ class MPMSolver:
             ti.append(self.pid.parent(), base, p)
 
     def step(self):
-        for i in range(1000):
+        for _ in range(1000):
             self.substeps += 1
             self.grid.deactivate_all()
             self.build_pid()

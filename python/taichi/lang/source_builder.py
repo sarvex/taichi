@@ -42,16 +42,24 @@ class SourceBuilder:
 
                 def compile_fn_impl(filename):
                     if impl.current_cfg().arch == _ti_core.Arch.x64:
-                        subprocess.call(get_clangpp() + ' -flto -c ' +
-                                        filename + ' -o ' +
-                                        os.path.join(self.td, 'source.bc'),
-                                        shell=True)
+                        subprocess.call(
+                            (
+                                f'{get_clangpp()} -flto -c {filename} -o '
+                                + os.path.join(self.td, 'source.bc')
+                            ),
+                            shell=True,
+                        )
                     else:
-                        subprocess.call(get_clangpp() + ' -flto -c ' +
-                                        filename + ' -o ' +
-                                        os.path.join(self.td, 'source.bc') +
-                                        ' -target nvptx64-nvidia-cuda',
-                                        shell=True)
+                        subprocess.call(
+                            (
+                                (
+                                    f'{get_clangpp()} -flto -c {filename} -o '
+                                    + os.path.join(self.td, 'source.bc')
+                                )
+                                + ' -target nvptx64-nvidia-cuda'
+                            ),
+                            shell=True,
+                        )
                     return os.path.join(self.td, 'source.bc')
 
                 compile_fn = compile_fn_impl
@@ -67,11 +75,16 @@ class SourceBuilder:
                 def compile_fn_impl(filename):
                     # Cannot use -o to specify multiple output files
                     subprocess.call(
-                        get_clangpp() + ' ' +
-                        os.path.join(self.td, 'source.cu') +
-                        ' -c -emit-llvm -std=c++17 --cuda-gpu-arch=sm_50 -nocudalib',
+                        (
+                            (
+                                f'{get_clangpp()} '
+                                + os.path.join(self.td, 'source.cu')
+                            )
+                            + ' -c -emit-llvm -std=c++17 --cuda-gpu-arch=sm_50 -nocudalib'
+                        ),
                         cwd=self.td,
-                        shell=True)
+                        shell=True,
+                    )
                     return os.path.join(
                         self.td, 'source-cuda-nvptx64-nvidia-cuda-sm_50.bc')
 
@@ -90,9 +103,10 @@ class SourceBuilder:
             ]:
                 raise TaichiSyntaxError(
                     "Unsupported arch for external function call")
-            subprocess.call('llvm-as ' + filename + ' -o ' +
-                            os.path.join(self.td, 'source.bc'),
-                            shell=True)
+            subprocess.call(
+                (f'llvm-as {filename} -o ' + os.path.join(self.td, 'source.bc')),
+                shell=True,
+            )
             self.bc = os.path.join(self.td, 'source.bc')
             self.mode = 'bc'
         elif filename.endswith(".bc"):

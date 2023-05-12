@@ -215,19 +215,20 @@ class KernelProfiler:
             self._statistical_results[record.name].insert_record(
                 record.kernel_time)
             self._total_time_ms += record.kernel_time
-        self._statistical_results = {
-            k: v
-            for k, v in sorted(self._statistical_results.items(),
-                               key=lambda item: item[1],
-                               reverse=True)
-        }
+        self._statistical_results = dict(
+            sorted(
+                self._statistical_results.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )
+        )
 
     def _make_table_header(self, mode):
         header_str = f'Kernel Profiler({mode}, {self._profiling_toolkit})'
         arch_name = f' @ {_ti_core.arch_name(impl.current_cfg().arch).upper()}'
         device_name = impl.get_runtime().prog.get_kernel_profiler_device_name()
         if len(device_name) > 1:  # default device_name = ' '
-            device_name = ' on ' + device_name
+            device_name = f' on {device_name}'
         return header_str + arch_name + device_name
 
     def _print_statistics_info(self):
@@ -295,8 +296,8 @@ class KernelProfiler:
                 '   regs  |   shared mem | grid size | block size | occupancy |'
             )  #kernel_attributes
         for idx in range(values_num):
-            column_header += metric_list[idx].header + '|'
-        column_header = (column_header + '] Kernel name').replace("|]", "]")
+            column_header += f'{metric_list[idx].header}|'
+        column_header = f'{column_header}] Kernel name'.replace("|]", "]")
 
         # partition line
         line_length = max(len(column_header), len(table_header))
@@ -318,9 +319,9 @@ class KernelProfiler:
                     record.active_blocks_per_multiprocessor
                 ]
             for idx in range(values_num):
-                formatted_str += metric_list[idx].format + '|'
+                formatted_str += f'{metric_list[idx].format}|'
                 values += [record.metric_values[idx] * metric_list[idx].scale]
-            formatted_str = (formatted_str + '] ' + record.name)
+            formatted_str = f'{formatted_str}] {record.name}'
             string_list.append(formatted_str.replace("|]", "]"))
             values_list.append(values)
             fake_timestamp += record.kernel_time

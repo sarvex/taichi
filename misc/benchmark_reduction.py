@@ -27,7 +27,7 @@ def reduce():
 fill()
 fill()
 
-for i in range(10):
+for _ in range(10):
     reduce()
 
 ground_truth = 10 * N * (N - 1) / 2 % 2**32

@@ -54,7 +54,7 @@ def is_interior_x_face(i, j):
 
 @ti.func
 def is_boundary_x_face(i, j):
-    return (i == 1 or i == N - 1) and 0 < j < N - 1
+    return i in [1, N - 1] and 0 < j < N - 1
 
 
 @ti.func
@@ -64,7 +64,7 @@ def is_interior_y_face(i, j):
 
 @ti.func
 def is_boundary_y_face(i, j):
-    return 0 < i < N - 1 and (j == 1 or j == N - 1)
+    return 0 < i < N - 1 and j in [1, N - 1]
 
 
 @ti.func
@@ -96,10 +96,7 @@ def set_ic():
             pos = get_cell_pos(i, j)
             center = ti.Vector([.5, .5])
 
-            if (pos - center).norm() < .25:
-                Q[i, j] = w_to_q(w_in)
-            else:
-                Q[i, j] = w_to_q(w_out)
+            Q[i, j] = w_to_q(w_in) if (pos - center).norm() < .25 else w_to_q(w_out)
 
         # implement more ic's later
 
@@ -108,22 +105,21 @@ def set_ic():
 def set_bc():
     # enforce boundary conditions by setting ghost cells
     for i, j in Q:
-        if not is_interior_cell(i, j):
-            if BC_type == 0:  # walls
-                # enforce neumann=0 and zero normal velocity on face
-                if i == 0:
-                    Q[i, j] = Q[i + 1, j]
-                    Q[i, j][1] = -Q[i + 1, j][1]
-                if i == N - 1:
-                    Q[i, j] = Q[i - 1, j]  # neumann 0 bc
-                    Q[i, j][1] = -Q[i - 1,
-                                    j][1]  # enforce 0 normal velocty at face
-                if j == 0:
-                    Q[i, j] = Q[i, j + 1]
-                    Q[i, j][2] = -Q[i, j + 1][2]
-                if j == N - 1:
-                    Q[i, j] = Q[i, j - 1]
-                    Q[i, j][2] = -Q[i, j - 1][2]
+        if not is_interior_cell(i, j) and BC_type == 0:
+            # enforce neumann=0 and zero normal velocity on face
+            if i == 0:
+                Q[i, j] = Q[i + 1, j]
+                Q[i, j][1] = -Q[i + 1, j][1]
+            if i == N - 1:
+                Q[i, j] = Q[i - 1, j]  # neumann 0 bc
+                Q[i, j][1] = -Q[i - 1,
+                                j][1]  # enforce 0 normal velocty at face
+            if j == 0:
+                Q[i, j] = Q[i, j + 1]
+                Q[i, j][2] = -Q[i, j + 1][2]
+            if j == N - 1:
+                Q[i, j] = Q[i, j - 1]
+                Q[i, j][2] = -Q[i, j - 1][2]
 
             # implement more bc's later
 
@@ -213,19 +209,19 @@ def HLLC_flux(qL, qR, n):
 
     # HLLC flux.
     HLLC = ti.Vector([0.0, 0.0, 0.0, 0.0])
-    if (0 <= sL):
+    if sL >= 0:
         HLLC = fL
-    elif (0 <= sM):
+    elif sM >= 0:
         qsL = rL * (sL-vnL)/(sL-sM) \
                   * ti.Vector([1.0, sM*nx-vtL*ny,sM*ny+vtL*nx, \
                                qL[3]/rL + (sM-vnL)*(sM+pL/(rL*(sL-vnL)))])
         HLLC = fL + sL * (qsL - qL)
-    elif (0 <= sR):
+    elif sR >= 0:
         qsR = rR * (sR-vnR)/(sR-sM) \
                    * ti.Vector([1.0, sM*nx-vtR*ny,sM*ny+vtR*nx, \
                                 qR[3]/rR + (sM-vnR)*(sM+pR/(rR*(sR-vnR)))])
         HLLC = fR + sR * (qsR - qR)
-    elif (0 >= sR):
+    elif sR <= 0:
         HLLC = fR
 
     return HLLC

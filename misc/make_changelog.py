@@ -19,7 +19,7 @@ def load_pr_tags():
 
 def main(ver=None, repo_dir='.'):
     g = Repo(repo_dir)
-    commits_with_tags = set([tag.commit for tag in g.tags])
+    commits_with_tags = {tag.commit for tag in g.tags}
     commits = list(g.iter_commits(ver, max_count=200))
     begin, end = -1, 0
 

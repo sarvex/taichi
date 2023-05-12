@@ -85,12 +85,11 @@ def get_ctime_year(filepath: str) -> str:
     using git-log.
     """
     # %aI: author date as an YYYY-MM-DDTHH:MM:SS-HH:MM string (git 2.21).
-    command = "git --no-pager log --reverse --format=\"%aI\" {}".format(
-        filepath)
+    command = f'git --no-pager log --reverse --format=\"%aI\" {filepath}'
     try:
         out = subprocess.check_output(command.split())
     except subprocess.CalledProcessError as e:
-        sys.exit("%s error: %s" % (command, e))
+        sys.exit(f"{command} error: {e}")
     assert (type(out) == bytes)
     initial_commit_time = out.decode().strip('"').strip("'").split('\n', 1)[0]
     return initial_commit_time.split('-')[0]  # str
@@ -109,12 +108,16 @@ def make_notice(comment_style: CommentStyle, ctime_year: str) -> List[str]:
         line_start = "//"
     elif comment_style == CommentStyle.PY_STYLE:
         line_start = "#"
-    lines.append(
-        "{0} Copyright (c) {1} The Taichi Authors. All rights reserved.\n".
-        format(line_start, ctime_year))
-    lines.append(
-        "{0} Use of this software is governed by the LICENSE file.\n".format(
-            line_start))
+    lines.extend(
+        (
+            "{0} Copyright (c) {1} The Taichi Authors. All rights reserved.\n".format(
+                line_start, ctime_year
+            ),
+            "{0} Use of this software is governed by the LICENSE file.\n".format(
+                line_start
+            ),
+        )
+    )
     if comment_style == CommentStyle.C_STYLE:
         lines.append("*" * 78 + "*/\n")
     lines.append("\n")
@@ -147,11 +150,10 @@ def check_and_modify(filepath: str, comment_style: CommentStyle,
         if existent_notice_match:  # Notice exists...
             incorrect_notice_match = COPYRIGHT_INCORRECT_REGEX.search(
                 line_lower)
-            if not incorrect_notice_match:  # ...and is not caught by the format checker
+            if not incorrect_notice_match:
                 return FileActionResult.INTACT
-            else:  # ...but is caught by the format checker
-                to_replace_line_index = i
-                break
+            to_replace_line_index = i
+            break
     if not existent_notice_match:
         assert (not incorrect_notice_match)
         # Notice missing; now we need to insert a notice.
@@ -266,8 +268,8 @@ def work(args) -> bool:
     if problematic_num > 0:
         print("\t{}".format("\n\t".join(sorted(stats.problematic_files))))
         print(
-            "{} out of {} files do not have correctly-formatted copyright notices."
-            .format(problematic_num, stats.opened_file_num))
+            f"{problematic_num} out of {stats.opened_file_num} files do not have correctly-formatted copyright notices."
+        )
     else:
         print("Copyright notices in the given paths are ok.")
     return problematic_num == 0
@@ -306,17 +308,20 @@ def main():
     if len(args.paths) == 0:
         sys.exit("[Error] at least one path required")
 
-    missing_dirs = [e for e in args.paths if not os.path.exists(e)]
-    if missing_dirs:
-        sys.exit("[Error] path not found: %s" % " ".join(missing_dirs))
+    if missing_dirs := [e for e in args.paths if not os.path.exists(e)]:
+        sys.exit(f'[Error] path not found: {" ".join(missing_dirs)}')
 
-    unhandled_exts = None if not args.exts else [
-        e for e in args.exts.split(",")
-        if ("." + e) not in FILE_EXT_TO_COMMENT_STYLES
-    ]
+    unhandled_exts = (
+        None
+        if not args.exts
+        else [
+            e
+            for e in args.exts.split(",")
+            if f".{e}" not in FILE_EXT_TO_COMMENT_STYLES
+        ]
+    )
     if unhandled_exts:
-        sys.exit("[Error] unhandled extension names: %s" %
-                 " ".join(unhandled_exts))
+        sys.exit(f'[Error] unhandled extension names: {" ".join(unhandled_exts)}')
     return 0 if work(args) else 1
 
 

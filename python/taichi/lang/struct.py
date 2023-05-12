@@ -21,9 +21,9 @@ class Struct(TaichiOperations):
 
     def __init__(self, *args, **kwargs):
         # converts lists to matrices and dicts to structs
-        if len(args) == 1 and kwargs == {} and isinstance(args[0], dict):
+        if len(args) == 1 and not kwargs and isinstance(args[0], dict):
             self.entries = args[0]
-        elif len(args) == 0:
+        elif not args:
             self.entries = kwargs
         else:
             raise TaichiSyntaxError(
@@ -66,20 +66,17 @@ class Struct(TaichiOperations):
     def __setitem__(self, key, value):
         if isinstance(self.entries[key], SNodeHostAccess):
             self.entries[key].accessor.setter(value, *self.entries[key].key)
-        else:
-            if in_python_scope():
-                if isinstance(self.entries[key], Struct) or isinstance(
-                        self.entries[key], Matrix):
-                    self.entries[key]._set_entries(value)
-                else:
-                    if isinstance(value, numbers.Number):
-                        self.entries[key] = value
-                    else:
-                        raise TypeError(
-                            "A number is expected when assigning struct members"
-                        )
-            else:
+        elif in_python_scope():
+            if isinstance(self.entries[key], (Struct, Matrix)):
+                self.entries[key]._set_entries(value)
+            elif isinstance(value, numbers.Number):
                 self.entries[key] = value
+            else:
+                raise TypeError(
+                    "A number is expected when assigning struct members"
+                )
+        else:
+            self.entries[key] = value
 
     def _set_entries(self, value):
         if isinstance(value, dict):
@@ -104,34 +101,30 @@ class Struct(TaichiOperations):
         return setter
 
     def _element_wise_unary(self, foo):
-        entries = {}
-        for k, v in self.items:
-            if is_taichi_class(v):
-                entries[k] = v._element_wise_unary(foo)
-            else:
-                entries[k] = foo(v)
+        entries = {
+            k: v._element_wise_unary(foo) if is_taichi_class(v) else foo(v)
+            for k, v in self.items
+        }
         return Struct(entries)
 
     def _element_wise_binary(self, foo, other):
         other = self._broadcast_copy(other)
-        entries = {}
-        for k, v in self.items:
-            if is_taichi_class(v):
-                entries[k] = v._element_wise_binary(foo, other.entries[k])
-            else:
-                entries[k] = foo(v, other.entries[k])
+        entries = {
+            k: v._element_wise_binary(foo, other.entries[k])
+            if is_taichi_class(v)
+            else foo(v, other.entries[k])
+            for k, v in self.items
+        }
         return Struct(entries)
 
     def _broadcast_copy(self, other):
         if isinstance(other, dict):
             other = Struct(other)
         if not isinstance(other, Struct):
-            entries = {}
-            for k, v in self.items:
-                if is_taichi_class(v):
-                    entries[k] = v._broadcast_copy(other)
-                else:
-                    entries[k] = other
+            entries = {
+                k: v._broadcast_copy(other) if is_taichi_class(v) else other
+                for k, v in self.items
+            }
             other = Struct(entries)
         if self.entries.keys() != other.entries.keys():
             raise TypeError(
@@ -145,24 +138,23 @@ class Struct(TaichiOperations):
                 f'taichi class {type(self)}, maybe you want to use `a.fill(b)` instead?'
             )
         other = self._broadcast_copy(other)
-        entries = {}
-        for k, v in self.items:
-            if is_taichi_class(v):
-                entries[k] = v._element_wise_binary(foo, other.entries[k])
-            else:
-                entries[k] = foo(v, other.entries[k])
+        entries = {
+            k: v._element_wise_binary(foo, other.entries[k])
+            if is_taichi_class(v)
+            else foo(v, other.entries[k])
+            for k, v in self.items
+        }
         return self if foo.__name__ == 'assign' else Struct(entries)
 
     def _element_wise_ternary(self, foo, other, extra):
         other = self._broadcast_copy(other)
         extra = self._broadcast_copy(extra)
-        entries = {}
-        for k, v in self.items:
-            if is_taichi_class(v):
-                entries[k] = v._element_wise_ternary(foo, other.entries[k],
-                                                     extra.entries[k])
-            else:
-                entries[k] = foo(v, other.entries[k], extra.entries[k])
+        entries = {
+            k: v._element_wise_ternary(foo, other.entries[k], extra.entries[k])
+            if is_taichi_class(v)
+            else foo(v, other.entries[k], extra.entries[k])
+            for k, v in self.items
+        }
         return Struct(entries)
 
     @taichi_scope
@@ -187,8 +179,7 @@ class Struct(TaichiOperations):
     def __str__(self):
         """Python scope struct array print support."""
         if impl.inside_kernel():
-            item_str = ", ".join(
-                [str(k) + "=" + str(v) for k, v in self.items])
+            item_str = ", ".join([f"{str(k)}={str(v)}" for k, v in self.items])
             return f'<ti.Struct {item_str}>'
         return str(self.to_dict())
 
@@ -226,7 +217,7 @@ class Struct(TaichiOperations):
         field_dict = {}
 
         for key, dtype in members.items():
-            field_name = name + '.' + key
+            field_name = f'{name}.{key}'
             if isinstance(dtype, CompoundType):
                 field_dict[key] = dtype.field(shape=None,
                                               name=field_name,
@@ -461,8 +452,8 @@ class StructType(CompoundType):
                 self.members[k] = cook_dtype(dtype)
 
     def __call__(self, *args, **kwargs):
-        if len(args) == 0:
-            if kwargs == {}:
+        if not args:
+            if not kwargs:
                 raise TaichiSyntaxError(
                     "Custom type instances need to be created with an initial value."
                 )
@@ -476,8 +467,7 @@ class StructType(CompoundType):
             else:
                 # initialize struct members by dictionary
                 entries = Struct(args[0])
-        struct = self.cast(entries)
-        return struct
+        return self.cast(entries)
 
     def cast(self, struct):
         # sanity check members
@@ -488,23 +478,22 @@ class StructType(CompoundType):
         for k, dtype in self.members.items():
             if isinstance(dtype, CompoundType):
                 entries[k] = dtype.cast(struct.entries[k])
+            elif in_python_scope():
+                v = struct.entries[k]
+                entries[k] = int(
+                    v
+                ) if dtype in primitive_types.integer_types else float(v)
             else:
-                if in_python_scope():
-                    v = struct.entries[k]
-                    entries[k] = int(
-                        v
-                    ) if dtype in primitive_types.integer_types else float(v)
-                else:
-                    entries[k] = ops.cast(struct.entries[k], dtype)
+                entries[k] = ops.cast(struct.entries[k], dtype)
         return Struct(entries)
 
     def filled_with_scalar(self, value):
-        entries = {}
-        for k, dtype in self.members.items():
-            if isinstance(dtype, CompoundType):
-                entries[k] = dtype.filled_with_scalar(value)
-            else:
-                entries[k] = value
+        entries = {
+            k: dtype.filled_with_scalar(value)
+            if isinstance(dtype, CompoundType)
+            else value
+            for k, dtype in self.members.items()
+        }
         return Struct(entries)
 
     def field(self, **kwargs):

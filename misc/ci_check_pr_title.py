@@ -14,8 +14,7 @@ def get_old_ver():
             if ver[0] == 'v':
                 ver = ver[1:]
             ver = ver.split(' ')[0]
-            oldver = semver.VersionInfo.parse(ver)
-            return oldver
+            return semver.VersionInfo.parse(ver)
     raise ValueError('Could not find an old version!')
 
 

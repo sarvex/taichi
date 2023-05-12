@@ -18,11 +18,11 @@ class KernelTemplate:
     @staticmethod
     def keygen(v, key_p, fields):
         if isinstance(v, (int, float, bool)):
-            key_p += '=' + str(v) + ','
+            key_p += f'={str(v)},'
             return key_p
         for ky, val in fields:
             if val is v:
-                key_p += '=' + ky + ','
+                key_p += f'={ky},'
                 return key_p
         raise RuntimeError('Arg type must be of type int/float/boolean' +
                            'or taichi field. Type ' + str(type(v)) +
@@ -35,11 +35,7 @@ class KernelTemplate:
         injected_args = []
         key_p = ''
         anno_index = 0
-        template_args = {}
-
-        for index, (key, value) in enumerate(kwargs.items()):
-            template_args[index] = (key, value)
-
+        template_args = dict(enumerate(kwargs.items()))
         for anno in kernel.argument_annotations:
             if isinstance(anno, template):
                 (k, v) = template_args[anno_index]
@@ -210,8 +206,7 @@ class Module:
         TODO:
           * Support external array
         """
-        kt = KernelTemplate(kernel_fn, self)
-        yield kt
+        yield KernelTemplate(kernel_fn, self)
 
     def save(self, filepath, filename):
         """

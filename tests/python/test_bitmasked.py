@@ -102,7 +102,7 @@ def test_huge_bitmasked():
 
     @ti.kernel
     def func():
-        for i in range(n * n * 2):
+        for i in range(n**2 * 2):
             if i % 32 == 0:
                 x[i] = 1.0
 
@@ -113,7 +113,7 @@ def test_huge_bitmasked():
 
     func()
     count()
-    assert s[None] == (n * n * 2) // 32
+    assert s[None] == n**2 * 2 // 32
 
 
 @test_utils.test(require=ti.extension.sparse)

@@ -45,8 +45,7 @@ class RecordKernelGroup:
     recorded = set()
 
 
-record_file = os.environ.get('TI_ACTION_RECORD')
-if record_file:
+if record_file := os.environ.get('TI_ACTION_RECORD'):
     start_recording(record_file)
 
 __all__ = [

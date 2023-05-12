@@ -20,8 +20,7 @@ class BenchmarkInfo:
 class BenchmarkSuites:
     def __init__(self):
         self._suites = []
-        for suite in benchmark_suites:
-            self._suites.append(suite())
+        self._suites.extend(suite() for suite in benchmark_suites)
 
     def run(self):
         for suite in self._suites:
@@ -34,10 +33,7 @@ class BenchmarkSuites:
             suite.save_as_json(suite_dir)
 
     def get_suites_info(self):
-        info_dict = {}
-        for suite in self._suites:
-            info_dict[suite.suite_name] = suite.get_benchmark_info()
-        return info_dict
+        return {suite.suite_name: suite.get_benchmark_info() for suite in self._suites}
 
 
 def main():

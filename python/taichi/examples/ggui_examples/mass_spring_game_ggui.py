@@ -18,8 +18,7 @@ v = ti.Vector.field(2, dtype=ti.f32, shape=max_num_particles)
 f = ti.Vector.field(2, dtype=ti.f32, shape=max_num_particles)
 fixed = ti.field(dtype=ti.i32, shape=max_num_particles)
 
-indices = ti.field(dtype=ti.i32,
-                   shape=max_num_particles * max_num_particles * 2)
+indices = ti.field(dtype=ti.i32, shape=max_num_particles**2 * 2)
 per_vertex_color = ti.Vector.field(3, ti.f32, shape=max_num_particles)
 
 # rest_length[i, j] == 0 means i and j are NOT connected
@@ -81,10 +80,10 @@ def new_particle(pos_x: ti.f32, pos_y: ti.f32, fixed_: ti.i32):
     fixed[new_particle_id] = fixed_
     num_particles[None] += 1
 
+    connection_radius = 0.15
     # Connect with existing particles
     for i in range(new_particle_id):
         dist = (x[new_particle_id] - x[i]).norm()
-        connection_radius = 0.15
         if dist < connection_radius:
             # Connect the new particle with particle i
             rest_length[i, new_particle_id] = 0.1
@@ -150,7 +149,7 @@ def main():
             attract(cursor_pos[0], cursor_pos[1])
 
         if not paused[None]:
-            for step in range(substeps):
+            for _ in range(substeps):
                 substep()
 
         render()

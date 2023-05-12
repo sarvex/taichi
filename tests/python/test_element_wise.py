@@ -14,15 +14,8 @@ def _c_mod(a, b):
 @test_utils.test(fast_math=False, exclude=[ti.vulkan])
 def test_binary_f(lhs_is_mat, rhs_is_mat):
     x = ti.Matrix.field(3, 2, ti.f32, 16)
-    if lhs_is_mat:
-        y = ti.Matrix.field(3, 2, ti.f32, ())
-    else:
-        y = ti.field(ti.f32, ())
-    if rhs_is_mat:
-        z = ti.Matrix.field(3, 2, ti.f32, ())
-    else:
-        z = ti.field(ti.f32, ())
-
+    y = ti.Matrix.field(3, 2, ti.f32, ()) if lhs_is_mat else ti.field(ti.f32, ())
+    z = ti.Matrix.field(3, 2, ti.f32, ()) if rhs_is_mat else ti.field(ti.f32, ())
     if lhs_is_mat:
         y.from_numpy(np.array([[0, 2], [9, 3.1], [7, 4]], np.float32))
     else:
@@ -80,15 +73,8 @@ def test_binary_i(is_mat):
     lhs_is_mat, rhs_is_mat = is_mat
 
     x = ti.Matrix.field(3, 2, ti.i32, 20)
-    if lhs_is_mat:
-        y = ti.Matrix.field(3, 2, ti.i32, ())
-    else:
-        y = ti.field(ti.i32, ())
-    if rhs_is_mat:
-        z = ti.Matrix.field(3, 2, ti.i32, ())
-    else:
-        z = ti.field(ti.i32, ())
-
+    y = ti.Matrix.field(3, 2, ti.i32, ()) if lhs_is_mat else ti.field(ti.i32, ())
+    z = ti.Matrix.field(3, 2, ti.i32, ()) if rhs_is_mat else ti.field(ti.i32, ())
     if lhs_is_mat:
         y.from_numpy(np.array([[0, 2], [9, 3], [7, 4]], np.int32))
     else:
@@ -152,11 +138,7 @@ def test_binary_i(is_mat):
 def test_writeback_binary_f(rhs_is_mat):
     x = ti.Matrix.field(3, 2, ti.f32, 9)
     y = ti.Matrix.field(3, 2, ti.f32, ())
-    if rhs_is_mat:
-        z = ti.Matrix.field(3, 2, ti.f32, ())
-    else:
-        z = ti.field(ti.f32, ())
-
+    z = ti.Matrix.field(3, 2, ti.f32, ()) if rhs_is_mat else ti.field(ti.f32, ())
     y.from_numpy(np.array([[0, 2], [9, 3.1], [7, 4]], np.float32))
     if rhs_is_mat:
         z.from_numpy(np.array([[4, 5], [6, 3], [9, 2]], np.float32))
@@ -199,11 +181,7 @@ def test_writeback_binary_f(rhs_is_mat):
 def test_writeback_binary_i(rhs_is_mat):
     x = ti.Matrix.field(3, 2, ti.i32, 12)
     y = ti.Matrix.field(3, 2, ti.i32, ())
-    if rhs_is_mat:
-        z = ti.Matrix.field(3, 2, ti.i32, ())
-    else:
-        z = ti.field(ti.i32, ())
-
+    z = ti.Matrix.field(3, 2, ti.i32, ()) if rhs_is_mat else ti.field(ti.i32, ())
     y.from_numpy(np.array([[0, 2], [9, 3], [7, 4]], np.int32))
     if rhs_is_mat:
         z.from_numpy(np.array([[4, 5], [6, 3], [9, 2]], np.int32))
@@ -306,19 +284,9 @@ def test_unary():
 def test_ternary_i(is_mat):
     cond_is_mat, lhs_is_mat, rhs_is_mat = is_mat
     x = ti.Matrix.field(3, 2, ti.i32, 1)
-    if cond_is_mat:
-        y = ti.Matrix.field(3, 2, ti.i32, ())
-    else:
-        y = ti.field(ti.i32, ())
-    if lhs_is_mat:
-        z = ti.Matrix.field(3, 2, ti.i32, ())
-    else:
-        z = ti.field(ti.i32, ())
-    if rhs_is_mat:
-        w = ti.Matrix.field(3, 2, ti.i32, ())
-    else:
-        w = ti.field(ti.i32, ())
-
+    y = ti.Matrix.field(3, 2, ti.i32, ()) if cond_is_mat else ti.field(ti.i32, ())
+    z = ti.Matrix.field(3, 2, ti.i32, ()) if lhs_is_mat else ti.field(ti.i32, ())
+    w = ti.Matrix.field(3, 2, ti.i32, ()) if rhs_is_mat else ti.field(ti.i32, ())
     if cond_is_mat:
         y.from_numpy(np.array([[0, 2], [9, 0], [7, 4]], np.int32))
     else:

@@ -72,21 +72,18 @@ def find_compilation_database(path):
 
 
 def make_absolute(f, directory):
-    if os.path.isabs(f):
-        return f
-    return os.path.normpath(os.path.join(directory, f))
+    return f if os.path.isabs(f) else os.path.normpath(os.path.join(directory, f))
 
 
 def get_tidy_invocation(f, clang_tidy_binary, checks, tmpdir, build_path,
                         header_filter, extra_arg, extra_arg_before, quiet,
                         config):
     """Gets a command line for clang-tidy."""
-    start = [clang_tidy_binary]
-    start.append('-warnings-as-errors=*')
+    start = [clang_tidy_binary, '-warnings-as-errors=*']
     if header_filter is not None:
-        start.append('-header-filter=' + header_filter)
+        start.append(f'-header-filter={header_filter}')
     if checks:
-        start.append('-checks=' + checks)
+        start.append(f'-checks={checks}')
     if tmpdir is not None:
         start.append('-export-fixes')
         # Get a temporary file. We immediately close the handle so clang-tidy can
@@ -94,15 +91,13 @@ def get_tidy_invocation(f, clang_tidy_binary, checks, tmpdir, build_path,
         (handle, name) = tempfile.mkstemp(suffix='.yaml', dir=tmpdir)
         os.close(handle)
         start.append(name)
-    for arg in extra_arg:
-        start.append('-extra-arg=%s' % arg)
-    for arg in extra_arg_before:
-        start.append('-extra-arg-before=%s' % arg)
-    start.append('-p=' + build_path)
+    start.extend(f'-extra-arg={arg}' for arg in extra_arg)
+    start.extend(f'-extra-arg-before={arg}' for arg in extra_arg_before)
+    start.append(f'-p={build_path}')
     if quiet:
         start.append('-quiet')
     if config:
-        start.append('-config=' + config)
+        start.append(f'-config={config}')
     start.append(f)
     return start
 
@@ -114,10 +109,8 @@ def merge_replacement_files(tmpdir, mergefile):
     mergekey = "Diagnostics"
     merged = []
     for replacefile in glob.iglob(os.path.join(tmpdir, '*.yaml')):
-        content = yaml.safe_load(open(replacefile, 'r'))
-        if not content:
-            continue  # Skip empty files.
-        merged.extend(content.get(mergekey, []))
+        if content := yaml.safe_load(open(replacefile, 'r')):
+            merged.extend(content.get(mergekey, []))
 
     if merged:
         # MainSourceFile: The key is required by the definition inside
@@ -152,7 +145,7 @@ def apply_fixes(args, tmpdir):
     if args.format:
         invocation.append('-format')
     if args.style:
-        invocation.append('-style=' + args.style)
+        invocation.append(f'-style={args.style}')
     invocation.append(tmpdir)
     subprocess.call(invocation)
 
@@ -269,10 +262,9 @@ def main():
         build_path = find_compilation_database(db_path)
 
     try:
-        invocation = [args.clang_tidy_binary, '-list-checks']
-        invocation.append('-p=' + build_path)
+        invocation = [args.clang_tidy_binary, '-list-checks', f'-p={build_path}']
         if args.checks:
-            invocation.append('-checks=' + args.checks)
+            invocation.append(f'-checks={args.checks}')
         invocation.append('-')
         if args.quiet:
             # Even with -quiet we still want to check if we can call clang-tidy.
@@ -337,7 +329,7 @@ def main():
         os.kill(0, 9)
 
     if yaml and args.export_fixes:
-        print('Writing fixes to ' + args.export_fixes + ' ...')
+        print(f'Writing fixes to {args.export_fixes} ...')
         try:
             merge_replacement_files(tmpdir, args.export_fixes)
         except:

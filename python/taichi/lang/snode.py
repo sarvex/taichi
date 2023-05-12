@@ -182,9 +182,7 @@ class SNode:
             n -= 1
         if p is None:
             return None
-        if p.type == _ti_core.SNodeType.root:
-            return impl.root
-        return SNode(p)
+        return impl.root if p.type == _ti_core.SNodeType.root else SNode(p)
 
     def _path_from_root(self):
         """Gets the path from root to `self` in the SNode tree.
@@ -226,9 +224,7 @@ class SNode:
             Tuple[int]: The number of elements from root in each axis of `self`.
         """
         dim = self.ptr.num_active_indices()
-        ret = tuple(self.ptr.get_shape_along_axis(i) for i in range(dim))
-
-        return ret
+        return tuple(self.ptr.get_shape_along_axis(i) for i in range(dim))
 
     def _loop_range(self):
         """Gets the taichi_core.Expr wrapping the taichi_core.GlobalVariableExpression corresponding to `self` to serve as loop range.
@@ -261,10 +257,7 @@ class SNode:
         Returns:
             List[SNode]: All children components of `self`.
         """
-        children = []
-        for i in range(self.ptr.get_num_ch()):
-            children.append(SNode(self.ptr.get_ch(i)))
-        return children
+        return [SNode(self.ptr.get_ch(i)) for i in range(self.ptr.get_num_ch())]
 
     @property
     def _num_dynamically_allocated(self):
@@ -288,16 +281,16 @@ class SNode:
         for c in ch:
             c.deactivate_all()
         SNodeType = _ti_core.SNodeType
-        if self.ptr.type == SNodeType.pointer or self.ptr.type == SNodeType.bitmasked:
+        if self.ptr.type in [SNodeType.pointer, SNodeType.bitmasked]:
             from taichi._kernels import \
-                snode_deactivate  # pylint: disable=C0415
+                    snode_deactivate  # pylint: disable=C0415
             snode_deactivate(self)
         if self.ptr.type == SNodeType.dynamic:
             # Note that dynamic nodes are different from other sparse nodes:
             # instead of deactivating each element, we only need to deactivate
             # its parent, whose linked list of chunks of elements will be deleted.
             from taichi._kernels import \
-                snode_deactivate_dynamic  # pylint: disable=C0415
+                    snode_deactivate_dynamic  # pylint: disable=C0415
             snode_deactivate_dynamic(self)
 
     def __repr__(self):
@@ -321,12 +314,13 @@ class SNode:
         Returns:
             Dict[int, int]: Mappings from virtual axes to physical axes.
         """
-        ret = {}
-        for virtual, physical in enumerate(
-                self.ptr.get_physical_index_position()):
-            if physical != -1:
-                ret[virtual] = physical
-        return ret
+        return {
+            virtual: physical
+            for virtual, physical in enumerate(
+                self.ptr.get_physical_index_position()
+            )
+            if physical != -1
+        }
 
 
 def rescale_index(a, b, I):
@@ -367,10 +361,11 @@ def rescale_index(a, b, I):
 
 
 def append(l, indices, val):
-    a = impl.expr_init(
-        _ti_core.insert_append(l._snode.ptr, expr.make_expr_group(indices),
-                               expr.Expr(val).ptr))
-    return a
+    return impl.expr_init(
+        _ti_core.insert_append(
+            l._snode.ptr, expr.make_expr_group(indices), expr.Expr(val).ptr
+        )
+    )
 
 
 def is_active(l, indices):

@@ -12,10 +12,7 @@ def test_if():
 
     @ti.kernel
     def func():
-        if True:
-            a = 0
-        else:
-            a = 1
+        a = 0 if True else 1
         print(a)
 
     with pytest.raises(Exception):

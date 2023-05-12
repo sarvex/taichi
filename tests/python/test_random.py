@@ -47,11 +47,11 @@ def test_random_int():
 @test_utils.test()
 def test_random_independent_product():
     n = 1024
-    x = ti.field(ti.f32, shape=n * n)
+    x = ti.field(ti.f32, shape=n**2)
 
     @ti.kernel
     def fill():
-        for i in range(n * n):
+        for i in range(n**2):
             a = ti.random()
             b = ti.random()
             x[i] = a * b

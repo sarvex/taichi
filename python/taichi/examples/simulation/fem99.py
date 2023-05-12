@@ -96,7 +96,7 @@ while gui.running:
             gui.running = False
         elif e.key == 'r':
             init_pos()
-    for i in range(30):
+    for _ in range(30):
         with ti.Tape(loss=U):
             update_U()
         advance()

@@ -17,7 +17,7 @@ def video_taichi_logo(result_dir):
                                     automatic_build=False)
     paint()
     gui = ti.GUI('Logo', (n, n), show_gui=False)
-    for i in range(FRAMES):
+    for _ in range(FRAMES):
         gui.set_image(x)
         video_manager.write_frame(gui.get_image())
         gui.clear()

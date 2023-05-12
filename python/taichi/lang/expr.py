@@ -48,10 +48,7 @@ class Expr(TaichiOperations):
 
 
 def make_var_list(size):
-    exprs = []
-    for _ in range(size):
-        exprs.append(_ti_core.make_id_expr(''))
-    return exprs
+    return [_ti_core.make_id_expr('') for _ in range(size)]
 
 
 def make_expr_group(*exprs):

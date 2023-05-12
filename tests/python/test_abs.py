@@ -28,9 +28,7 @@ def test_abs():
     def sgn(x):
         if x > 0:
             return 1
-        if x < 0:
-            return -1
-        return 0
+        return -1 if x < 0 else 0
 
     for i in range(N):
         assert x[i] == abs(y[i])

@@ -11,9 +11,7 @@ if sys.version_info[0] < 3 or sys.version_info[1] <= 5:
 
 
 def in_docker():
-    if os.environ.get("TI_IN_DOCKER", "") == "":
-        return False
-    return True
+    return os.environ.get("TI_IN_DOCKER", "") != ""
 
 
 def get_os_name():
@@ -104,8 +102,7 @@ ti_core = import_ti_core()
 
 ti_core.set_python_package_dir(package_root)
 
-log_level = os.environ.get('TI_LOG_LEVEL', '')
-if log_level:
+if log_level := os.environ.get('TI_LOG_LEVEL', ''):
     ti_core.set_logging_level(log_level)
 
 

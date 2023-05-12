@@ -91,10 +91,7 @@ class Quant:
         """
         # TODO: handle cases with frac > 32
         frac_type = Quant.int(bits=frac, signed=signed, compute=i32)
-        if signed:
-            scale = num_range / 2**(frac - 1)
-        else:
-            scale = num_range / 2**frac
+        scale = num_range / 2**(frac - 1) if signed else num_range / 2**frac
         if compute is None:
             compute = impl.get_runtime().default_fp
         return type_factory.custom_float(frac_type, None, compute, scale)

@@ -175,10 +175,7 @@ def set_all_unused():
 
 def init_vols(vols):
     set_all_unused()
-    total_vol = 0
-    for v in vols:
-        total_vol += v.volume
-
+    total_vol = sum(v.volume for v in vols)
     next_p = 0
     for i in range(len(vols)):
         v = vols[i]
@@ -302,9 +299,8 @@ def show_options():
     if paused:
         if window.GUI.button("Continue"):
             paused = False
-    else:
-        if window.GUI.button("Pause"):
-            paused = True
+    elif window.GUI.button("Pause"):
+        paused = True
     window.GUI.end()
 
 
@@ -326,10 +322,10 @@ def render():
 while window.running:
     #print("heyyy ",frame_id)
     frame_id += 1
-    frame_id = frame_id % 256
+    frame_id %= 256
 
     if not paused:
-        for s in range(steps):
+        for _ in range(steps):
             substep(g_x, g_y, g_z)
 
     render()

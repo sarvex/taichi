@@ -300,11 +300,9 @@ class MCISO:
         if self.use_sparse:
             ti.root.pointer(indices, self.N // self.blk_size).dense(
                 indices, self.blk_size).place(self.m)
-            ti.root.dense(indices, self.N).place(self.g)
         else:
             ti.root.dense(indices, self.N).place(self.m)
-            ti.root.dense(indices, self.N).place(self.g)
-
+        ti.root.dense(indices, self.N).place(self.g)
         self.r = ti.Vector.field(
             dim, float,
             (self.N**self.dim, self.dim))  # result buffer, TODO: optimize this
@@ -351,20 +349,26 @@ class MCISO:
 
                 n = ti.atomic_add(r_n, 1)
                 for l in ti.static(range(self.dim)):
-                    e = self.et[id, m][l]
                     R = float(I)
 
+                    e = self.et[id, m][l]
                     if ti.static(self.dim == 2):
                         i, j = I
                         # (.5, 0), (0, .5), (1, .5), (.5, 1)
                         if e == 0:
-                            p = (1 - self.m[i, j]) / (self.m[i + 1, j] -
-                                                      self.m[i, j])
-                            R = [i + p, j]
+                            R = [
+                                i
+                                + (1 - self.m[i, j])
+                                / (self.m[i + 1, j] - self.m[i, j]),
+                                j,
+                            ]
                         elif e == 1:
-                            p = (1 - self.m[i, j]) / (self.m[i, j + 1] -
-                                                      self.m[i, j])
-                            R = [i, j + p]
+                            R = [
+                                i,
+                                j
+                                + (1 - self.m[i, j])
+                                / (self.m[i, j + 1] - self.m[i, j]),
+                            ]
                         elif e == 2:
                             p = (1 - self.m[i + 1, j]) / (
                                 self.m[i + 1, j + 1] - self.m[i + 1, j])
@@ -379,21 +383,38 @@ class MCISO:
                         # (.5, 0, 1), (1, .5, 1), (.5, 1, 1), (0, .5, 1)
                         # (0, 0, .5), (1, 0, .5), (1, 1, .5), (0, 1, .5)
                         if e == 0:
-                            p = (1 - self.m[i, j, k]) / (self.m[i + 1, j, k] -
-                                                         self.m[i, j, k])
-                            R = [i + p, j, k]
+                            R = [
+                                i
+                                + (1 - self.m[i, j, k])
+                                / (self.m[i + 1, j, k] - self.m[i, j, k]),
+                                j,
+                                k,
+                            ]
                         elif e == 1:
                             p = (1 - self.m[i + 1, j, k]) / (
                                 self.m[i + 1, j + 1, k] - self.m[i + 1, j, k])
                             R = [i + 1, j + p, k]
+                        elif e == 10:
+                            p = (1 - self.m[i + 1, j + 1, k]) / (
+                                self.m[i + 1, j + 1, k + 1] -
+                                self.m[i + 1, j + 1, k])
+                            R = [i + 1, j + 1, k + p]
+                        elif e == 11:
+                            p = (1 - self.m[i, j + 1, k]) / (
+                                self.m[i, j + 1, k + 1] - self.m[i, j + 1, k])
+                            R = [i, j + 1, k + p]
                         elif e == 2:
                             p = (1 - self.m[i, j + 1, k]) / (
                                 self.m[i + 1, j + 1, k] - self.m[i, j + 1, k])
                             R = [i + p, j + 1, k]
                         elif e == 3:
-                            p = (1 - self.m[i, j, k]) / (self.m[i, j + 1, k] -
-                                                         self.m[i, j, k])
-                            R = [i, j + p, k]
+                            R = [
+                                i,
+                                j
+                                + (1 - self.m[i, j, k])
+                                / (self.m[i, j + 1, k] - self.m[i, j, k]),
+                                k,
+                            ]
                         elif e == 4:
                             p = (1 - self.m[i, j, k + 1]) / (
                                 self.m[i + 1, j, k + 1] - self.m[i, j, k + 1])
@@ -413,22 +434,17 @@ class MCISO:
                                 self.m[i, j + 1, k + 1] - self.m[i, j, k + 1])
                             R = [i, j + p, k + 1]
                         elif e == 8:
-                            p = (1 - self.m[i, j, k]) / (self.m[i, j, k + 1] -
-                                                         self.m[i, j, k])
-                            R = [i, j, k + p]
+                            R = [
+                                i,
+                                j,
+                                k
+                                + (1 - self.m[i, j, k])
+                                / (self.m[i, j, k + 1] - self.m[i, j, k]),
+                            ]
                         elif e == 9:
                             p = (1 - self.m[i + 1, j, k]) / (
                                 self.m[i + 1, j, k + 1] - self.m[i + 1, j, k])
                             R = [i + 1, j, k + p]
-                        elif e == 10:
-                            p = (1 - self.m[i + 1, j + 1, k]) / (
-                                self.m[i + 1, j + 1, k + 1] -
-                                self.m[i + 1, j + 1, k])
-                            R = [i + 1, j + 1, k + p]
-                        elif e == 11:
-                            p = (1 - self.m[i, j + 1, k]) / (
-                                self.m[i, j + 1, k + 1] - self.m[i, j + 1, k])
-                            R = [i, j + 1, k + p]
                     self.r[n, l] = R
 
         return r_n

@@ -261,10 +261,7 @@ while window.running:
             paused = False
             reset()
         elif e.key == 's':
-            if curl_strength:
-                curl_strength = 0
-            else:
-                curl_strength = 7
+            curl_strength = 0 if curl_strength else 7
         elif e.key == 'p':
             paused = not paused
         elif e.key == 'd':

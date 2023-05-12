@@ -107,7 +107,7 @@ def T(a):
 init()
 gui = ti.GUI('MPM3D', background_color=0x112F41)
 while gui.running and not gui.get_event(gui.ESCAPE):
-    for s in range(steps):
+    for _ in range(steps):
         substep()
     pos = x.to_numpy()
     if export_file:

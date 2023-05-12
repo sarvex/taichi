@@ -13,10 +13,9 @@ build_type = 'default'
 
 import struct
 
-assert struct.calcsize(
-    'P'
-) * 8 == 64, "Only 64-bit platforms are supported. Current platform: {}".format(
-    struct.calcsize('P') * 8)
+assert (
+    struct.calcsize('P') == 8
+), f"Only 64-bit platforms are supported. Current platform: {struct.calcsize('P') * 8}"
 
 if sys.version_info[0] < 3 or sys.version_info[1] < 6:
     print("\nPlease restart with python3. \n(Taichi supports Python 3.6+)\n")
@@ -43,22 +42,21 @@ def get_shell_rc_name():
     elif shell == 'zsh':
         return '~/.zshrc'
     else:
-        assert False, 'No shell rc file specified for shell "{}"'.format(shell)
+        assert False, f'No shell rc file specified for shell "{shell}"'
 
 
 def get_username():
     if build_type == 'ci':
         os.environ['TI_CI'] = '1'
-        username = 'travis'
+        return 'travis'
     else:
         assert get_os_name() != 'win'
         import pwd
-        username = pwd.getpwuid(os.getuid())[0]
-    return username
+        return pwd.getpwuid(os.getuid())[0]
 
 
 def check_command_existence(cmd):
-    return os.system('type {}'.format(cmd)) == 0
+    return os.system(f'type {cmd}') == 0
 
 
 def execute_command(line, allow_nonzero_output=0):
@@ -79,7 +77,7 @@ def get_os_name():
         return 'win'
     elif name.lower().startswith('linux'):
         return 'linux'
-    assert False, "Unknown platform name %s" % name
+    assert False, f"Unknown platform name {name}"
 
 
 def get_default_directory_name():
@@ -100,7 +98,7 @@ def get_default_directory_name():
 
 def append_to_shell_rc(line):
     if get_os_name() != 'win':
-        execute_command('echo "{}" >> {}'.format(line, get_shell_rc_name()))
+        execute_command(f'echo "{line}" >> {get_shell_rc_name()}')
     else:
         print(
             "Warning: Windows environment variable persistent edits are not supported"
@@ -112,15 +110,12 @@ def set_env(key, val, val_now=None):
         val_now = val
     val = str(val)
     val_now = str(val_now)
-    append_to_shell_rc("export {}={}".format(key, val))
+    append_to_shell_rc(f"export {key}={val}")
     os.environ[key] = val_now
 
 
 def get_path_separator():
-    if get_os_name() == 'win':
-        return ';'
-    else:
-        return ':'
+    return ';' if get_os_name() == 'win' else ':'
 
 
 def test_installation():
@@ -144,9 +139,11 @@ class Installer:
         execute_command("git submodule update --init --recursive")
 
     def run(self):
-        assert get_os_name() in ['linux', 'osx', 'win'], \
-          'Platform {} is not currently supported by this script. Please install manually.'.format(
-            get_os_name())
+        assert get_os_name() in [
+            'linux',
+            'osx',
+            'win',
+        ], f'Platform {get_os_name()} is not currently supported by this script. Please install manually.'
         if len(sys.argv) > 1:
             self.build_type = sys.argv[1]
             print('Build type: ', self.build_type)
@@ -155,7 +152,7 @@ class Installer:
         global build_type
         build_type = self.build_type
 
-        print('Build type = {}'.format(self.build_type))
+        print(f'Build type = {self.build_type}')
 
         assert self.build_type in ['default', 'ci']
 
@@ -211,7 +208,7 @@ class Installer:
                 dist = distro.id()
             else:
                 dist = 'ubuntu'
-            print("Linux distribution '{}' detected".format(dist))
+            print(f"Linux distribution '{dist}' detected")
             if dist == 'ubuntu':
                 if self.build_type != 'ci':  # Currently the CI machines have no sudo
                     execute_command('sudo apt-get update')
@@ -242,10 +239,13 @@ class Installer:
             set_env('TAICHI_REPO_DIR', self.repo_dir)
 
             set_env(
-                'PYTHONPATH', '\$TAICHI_REPO_DIR/python/' +
-                get_path_separator() + '\$PYTHONPATH',
-                '{}/python/'.format(self.repo_dir) + get_path_separator() +
-                os.environ.get('PYTHONPATH', ''))
+                'PYTHONPATH',
+                '\$TAICHI_REPO_DIR/python/'
+                + get_path_separator()
+                + '\$PYTHONPATH',
+                f'{self.repo_dir}/python/{get_path_separator()}'
+                + os.environ.get('PYTHONPATH', ''),
+            )
             set_env(
                 'PATH',
                 '\$TAICHI_REPO_DIR/bin/' + get_path_separator() + '\$PATH',
@@ -253,7 +253,7 @@ class Installer:
                 os.environ.get('PATH', ''))
 
             os.environ['PYTHONIOENCODING'] = 'utf-8'
-            print('PYTHONPATH={}'.format(os.environ['PYTHONPATH']))
+            print(f"PYTHONPATH={os.environ['PYTHONPATH']}")
 
             execute_command('echo $PYTHONPATH')
         else:
@@ -263,17 +263,6 @@ class Installer:
             os.makedirs('build', exist_ok=True)
             execute_command(f'{sys.executable} setup.py install --user')
         return
-        if test_installation():
-            print('  Successfully Installed Taichi at {}.'.format(
-                self.repo_dir))
-            if execute_command('ti') != 0:
-                print('  Warning: shortcut "ti" does not work.')
-            print('  Please execute')
-            print('    source ', get_shell_rc_name())
-            print('  or restart your terminal.')
-        else:
-            print('  Error: installation failed.')
-            exit(-1)
 
 
 if __name__ == '__main__':

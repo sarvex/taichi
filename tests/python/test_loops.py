@@ -127,7 +127,7 @@ def test_dynamic_loop_range():
 
     test()
     assert c[None] == n
-    assert sum(x.to_numpy()) == (n * (n - 1) // 2) + n * n
+    assert sum(x.to_numpy()) == n * (n - 1) // 2 + n**2
 
 
 @test_utils.test()

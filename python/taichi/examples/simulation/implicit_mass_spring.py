@@ -249,9 +249,11 @@ if __name__ == "__main__":
     else:
         window = ti.ui.Window('Implicit Mass Spring System', res=(500, 500))
         while window.running:
-            if window.get_event(ti.ui.PRESS):
-                if window.event.key == ti.ui.ESCAPE:
-                    break
+            if (
+                window.get_event(ti.ui.PRESS)
+                and window.event.key == ti.ui.ESCAPE
+            ):
+                break
             if window.is_pressed(ti.ui.SPACE):
                 pause = not pause
 

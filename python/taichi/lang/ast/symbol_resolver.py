@@ -43,10 +43,7 @@ class ASTResolver:
 
         for attr in reversed(chain):
             try:
-                if isinstance(scope, dict):
-                    scope = scope[attr]
-                else:
-                    scope = getattr(scope, attr)
+                scope = scope[attr] if isinstance(scope, dict) else getattr(scope, attr)
             except (KeyError, AttributeError):
                 return False
         # The name ``scope`` here could be a bit confusing

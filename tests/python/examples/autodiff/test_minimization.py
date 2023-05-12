@@ -12,7 +12,7 @@ def test_minimization():
         x[i] = random.random()
         y[i] = random.random()
 
-    for k in range(100):
+    for _ in range(100):
         with ti.Tape(loss=L):
             reduce()
         gradient_descent()

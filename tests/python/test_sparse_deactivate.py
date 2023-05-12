@@ -80,7 +80,7 @@ def test_pointer2():
 
     @ti.kernel
     def func():
-        for i in range(n * n):
+        for i in range(n**2):
             x[i] = 1.0
 
     @ti.kernel
@@ -95,12 +95,12 @@ def test_pointer2():
     func()
     clear()
 
-    for i in range(n * n):
+    for i in range(n**2):
         assert x[i] == 0.0
 
     set10()
 
-    for i in range(n * n):
+    for i in range(n**2):
         if i != 10:
             assert x[i] == 0.0
         else:
@@ -121,8 +121,8 @@ def test_pointer3():
 
     @ti.kernel
     def fill():
-        for j in range(n * n):
-            for i in range(n * n):
+        for j in range(n**2):
+            for i in range(n**2):
                 x[i, j] = i + j
 
     @ti.kernel
@@ -164,8 +164,8 @@ def test_pointer3():
         clear_temp()
 
         xn = x.to_numpy()
-        for j in range(n * n):
-            for i in range(n * n):
+        for j in range(n**2):
+            for i in range(n**2):
                 if i + j < 100:
                     assert xn[i, j] == i + j
 

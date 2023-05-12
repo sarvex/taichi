@@ -22,7 +22,7 @@ def test_linear():
 
 
 def test_linear_repeated():
-    for i in range(10):
+    for _ in range(10):
         test_linear()
 
 

@@ -68,7 +68,7 @@ def compute_sdf(z, c):
     md2 = 1.0
     mz2 = dot(z, z)
 
-    for iter in range(iters):
+    for _ in range(iters):
         md2 *= max_norm * mz2
         z = quat_mul(z, z) + c
 
@@ -165,7 +165,7 @@ class Julia:
             max_t = 10
 
             t = 0.0
-            for step in range(300):
+            for _ in range(300):
                 h = compute_sdf(o + t * d, c)
                 t += h
                 if h < 0.0001 or t >= max_t:

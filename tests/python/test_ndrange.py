@@ -214,10 +214,7 @@ def test_ndrange_ast_transform():
 
     for i in range(n):
         for j in range(n):
-            if i < u and j < v:
-                r = i * n + j + 1
-            else:
-                r = 0
+            r = i * n + j + 1 if i < u and j < v else 0
             assert A[i, j] == r
 
 

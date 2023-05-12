@@ -20,8 +20,7 @@ def cook_image_to_bytes(img):
     elif img.dtype != np.uint8:
         raise ValueError(f'Data type {img.dtype} not supported in ti.imwrite')
 
-    assert len(img.shape) in [2,
-                              3], "Image must be either RGB/RGBA or greyscale"
+    assert len(img.shape) in {2, 3}, "Image must be either RGB/RGBA or greyscale"
 
     if len(img.shape) == 2:
         img = img.reshape(*img.shape, 1)
@@ -104,9 +103,10 @@ def imshow(img, title='imshow'):
     except:
         if not isinstance(img, np.ndarray):
             img = img.to_numpy()
-            assert len(
-                img.shape) in [2,
-                               3], "Image must be either RGB/RGBA or greyscale"
+            assert len(img.shape) in {
+                2,
+                3,
+            }, "Image must be either RGB/RGBA or greyscale"
 
         with ti.GUI(title, res=img.shape[:2]) as gui:
             img = gui.cook_image(img)

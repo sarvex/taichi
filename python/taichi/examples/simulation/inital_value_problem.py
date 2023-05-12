@@ -9,17 +9,16 @@ import taichi as ti
 def init():
     a = []
     for i in np.linspace(0, 1, n, False):
-        for j in np.linspace(0, 1, n, False):
-            a.append([i, j])
+        a.extend([i, j] for j in np.linspace(0, 1, n, False))
     return np.array(a)
 
 
 ti.init(arch=ti.gpu)
 n = 50
-dirs = ti.field(dtype=float, shape=(n * n, 2))
+dirs = ti.field(dtype=float, shape=(n**2, 2))
 locations_np = init()
 
-locations = ti.field(dtype=float, shape=(n * n, 2))
+locations = ti.field(dtype=float, shape=(n**2, 2))
 locations.from_numpy(locations_np)
 
 
@@ -39,7 +38,7 @@ def paint(t: float):
 gui = ti.GUI("Vector Field", res=(500, 500))
 
 begining = time.time_ns()
-for k in range(1000000):
+for _ in range(1000000):
     start_time = time.time_ns()
     paint((time.time_ns() - begining) * 0.00000001)
     dirs_np = dirs.to_numpy()

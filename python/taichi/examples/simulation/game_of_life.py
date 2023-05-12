@@ -52,10 +52,7 @@ def run():
 @ti.kernel
 def init():
     for i, j in alive:
-        if ti.random() > 0.8:
-            alive[i, j] = 1
-        else:
-            alive[i, j] = 0
+        alive[i, j] = 1 if ti.random() > 0.8 else 0
 
 
 gui = ti.GUI('Game of Life', (img_size, img_size))

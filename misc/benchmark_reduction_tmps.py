@@ -41,7 +41,7 @@ reduce()
 
 start = time.time()
 got = 0.0
-for i in range(num_runs):
+for _ in range(num_runs):
     got += reduce()
 duration = time.time() - start
 print(f'duration={duration:.2e}s average={(duration / num_runs):.2e}s')

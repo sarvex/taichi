@@ -482,7 +482,7 @@ def test_mpm99_aot():
 def test_mpm88_ndarray():
     dim = 2
     N = 64
-    n_particles = N * N
+    n_particles = N**2
     n_grid = 128
     dx = 1 / n_grid
     inv_dx = 1 / dx

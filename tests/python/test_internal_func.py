@@ -20,15 +20,6 @@ def test_basic():
 def test_host_polling():
     return
 
-    @ti.kernel
-    def test():
-        impl.call_internal("refresh_counter")
-
-    for i in range(10):
-        print('updating tail to', i)
-        test()
-        time.sleep(0.1)
-
 
 @test_utils.test(exclude=[ti.metal, ti.opengl, ti.cuda, ti.vulkan, ti.cc])
 def test_list_manager():

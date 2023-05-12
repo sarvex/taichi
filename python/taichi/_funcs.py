@@ -14,7 +14,7 @@ def _randn(dt):
     (Gaussian) distribution of mean 0 and variance 1, using the
     Box-Muller transformation.
     """
-    assert dt == f32 or dt == f64
+    assert dt in [f32, f64]
     u1 = ops.cast(1.0, dt) - ops.random(dt)
     u2 = ops.random(dt)
     r = ops.sqrt(-2 * ops.log(u1))
@@ -159,19 +159,14 @@ def svd2d(A, dt):
         tao = ops.cast(0.5, dt) * (S[0, 0] - S[1, 1])
         w = ops.sqrt(tao**2 + S[0, 1]**2)
         t = ops.cast(0.0, dt)
-        if tao > 0:
-            t = S[0, 1] / (tao + w)
-        else:
-            t = S[0, 1] / (tao - w)
+        t = S[0, 1] / (tao + w) if tao > 0 else S[0, 1] / (tao - w)
         c = 1 / ops.sqrt(t**2 + 1)
         s = -t * c
         s1 = c**2 * S[0, 0] - 2 * c * s * S[0, 1] + s**2 * S[1, 1]
         s2 = s**2 * S[0, 0] + 2 * c * s * S[0, 1] + c**2 * S[1, 1]
     V = Matrix.zero(dt, 2, 2)
     if s1 < s2:
-        tmp = s1
-        s1 = s2
-        s2 = tmp
+        s1, s2 = s2, s1
         V = Matrix([[-s, c], [-c, -s]], dt=dt)
     else:
         V = Matrix([[c, s], [-s, c]], dt=dt)
@@ -193,13 +188,10 @@ def svd3d(A, dt, iters=None):
         Decomposed 3x3 matrices `U`, 'S' and `V`.
     """
     assert A.n == 3 and A.m == 3
-    inputs = tuple([e.ptr for e in A.entries])
+    inputs = tuple(e.ptr for e in A.entries)
     assert dt in [f32, f64]
     if iters is None:
-        if dt == f32:
-            iters = 5
-        else:
-            iters = 8
+        iters = 5 if dt == f32 else 8
     if dt == f32:
         rets = get_runtime().prog.current_ast_builder().sifakis_svd_f32(
             *inputs, iters)
@@ -321,11 +313,7 @@ def _svd(A, dt):
     Returns:
         Decomposed nxn matrices `U`, 'S' and `V`.
     """
-    if static(A.n == 2):  # pylint: disable=R1705
-        ret = svd2d(A, dt)
-        return ret
-    else:
-        return svd3d(A, dt)
+    return svd2d(A, dt) if static(A.n == 2) else svd3d(A, dt)
 
 
 @func
@@ -344,8 +332,7 @@ def _polar_decompose(A, dt):
         Decomposed nxn matrices `U` and `P`.
     """
     if static(A.n == 2):  # pylint: disable=R1705
-        ret = polar_decompose2d(A, dt)
-        return ret
+        return polar_decompose2d(A, dt)
     else:
         return polar_decompose3d(A, dt)
 
@@ -365,7 +352,7 @@ def polar_decompose(A, dt=None):
     """
     if dt is None:
         dt = impl.get_runtime().default_fp
-    if A.n != 2 and A.n != 3:
+    if A.n not in [2, 3]:
         raise Exception(
             "Polar decomposition only supports 2D and 3D matrices.")
     return _polar_decompose(A, dt)
@@ -386,7 +373,7 @@ def svd(A, dt=None):
     """
     if dt is None:
         dt = impl.get_runtime().default_fp
-    if A.n != 2 and A.n != 3:
+    if A.n not in [2, 3]:
         raise Exception("SVD only supports 2D and 3D matrices.")
     return _svd(A, dt)
 

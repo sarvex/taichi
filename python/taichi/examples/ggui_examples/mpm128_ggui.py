@@ -166,7 +166,7 @@ while window.running:
     if window.is_pressed(ti.ui.RMB):
         attractor_strength[None] = -1
 
-    for s in range(int(2e-3 // dt)):
+    for _ in range(int(2e-3 // dt)):
         substep()
     render()
     canvas.set_background_color((0.067, 0.184, 0.255))

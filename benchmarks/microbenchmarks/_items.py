@@ -44,7 +44,7 @@ class DataType(BenchmarkItem):
     @staticmethod
     def is_integer(dtype: str):
         integer_list = ['i32', 'u32', 'i64', 'u64']
-        return True if dtype in integer_list else False
+        return dtype in integer_list
 
 
 class DataSize(BenchmarkItem):
@@ -106,11 +106,8 @@ class AtomicOps(BenchmarkItem):
     @staticmethod
     def is_logical_op(op: str):
         logical_op_list = ['atomic_and', 'atomic_or', 'atomic_xor']
-        return True if op in logical_op_list else False
+        return op in logical_op_list
 
     @staticmethod
     def is_supported_type(op: str, dtype: str):
-        if AtomicOps.is_logical_op(op) and not DataType.is_integer(dtype):
-            return False
-        else:
-            return True
+        return bool(not AtomicOps.is_logical_op(op) or DataType.is_integer(dtype))

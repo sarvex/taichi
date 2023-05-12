@@ -150,20 +150,20 @@ Grid-based MGPCG solver for the possion equation.
     def apply_preconditioner(self):
         self.z[0].fill(0)
         for l in range(self.n_mg_levels - 1):
-            for i in range(self.pre_and_post_smoothing << l):
+            for _ in range(self.pre_and_post_smoothing << l):
                 self.smooth(l, 0)
                 self.smooth(l, 1)
             self.z[l + 1].fill(0)
             self.r[l + 1].fill(0)
             self.restrict(l)
 
-        for i in range(self.bottom_smoothing):
+        for _ in range(self.bottom_smoothing):
             self.smooth(self.n_mg_levels - 1, 0)
             self.smooth(self.n_mg_levels - 1, 1)
 
         for l in reversed(range(self.n_mg_levels - 1)):
             self.prolongate(l)
-            for i in range(self.pre_and_post_smoothing << l):
+            for _ in range(self.pre_and_post_smoothing << l):
                 self.smooth(l, 1)
                 self.smooth(l, 0)
 

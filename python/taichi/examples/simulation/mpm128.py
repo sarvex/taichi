@@ -129,7 +129,7 @@ gui = ti.GUI("Taichi MLS-MPM-128", res=512, background_color=0x112F41)
 reset()
 gravity[None] = [0, -1]
 
-for frame in range(20000):
+for _ in range(20000):
     if gui.get_event(ti.GUI.PRESS):
         if gui.event.key == 'r': reset()
         elif gui.event.key in [ti.GUI.ESCAPE, ti.GUI.EXIT]: break
@@ -146,7 +146,7 @@ for frame in range(20000):
         attractor_strength[None] = 1
     if gui.is_pressed(ti.GUI.RMB):
         attractor_strength[None] = -1
-    for s in range(int(2e-3 // dt)):
+    for _ in range(int(2e-3 // dt)):
         substep()
     gui.circles(x.to_numpy(),
                 radius=1.5,

@@ -17,7 +17,7 @@ def test_custom_float():
     def foo():
         x[None] = 0.7
         print(x[None])
-        x[None] = x[None] + 0.4
+        x[None] += 0.4
 
     foo()
     assert x[None] == approx(1.1)
@@ -43,9 +43,9 @@ def test_custom_matrix_rotation():
     @ti.kernel
     def rotate_18_degrees():
         angle = math.pi / 10
-        x[None] = x[None] @ ti.Matrix(
-            [[ti.cos(angle), ti.sin(angle)], [-ti.sin(angle),
-                                              ti.cos(angle)]])
+        x[None] @= ti.Matrix(
+            [[ti.cos(angle), ti.sin(angle)], [-ti.sin(angle), ti.cos(angle)]]
+        )
 
     for i in range(5):
         rotate_18_degrees()

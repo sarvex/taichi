@@ -47,7 +47,7 @@ def expr_init(rhs):
     if isinstance(rhs, tuple):
         return tuple(expr_init(e) for e in rhs)
     if isinstance(rhs, dict):
-        return dict((key, expr_init(val)) for key, val in rhs.items())
+        return {key: expr_init(val) for key, val in rhs.items()}
     if isinstance(rhs, _ti_core.DataType):
         return rhs
     if isinstance(rhs, _ti_core.Arch):
@@ -69,7 +69,7 @@ def expr_init_list(xs, expected):
     if not isinstance(xs, (list, tuple, Matrix)):
         raise TypeError(f'Cannot unpack type: {type(xs)}')
     if isinstance(xs, Matrix):
-        if not xs.m == 1:
+        if xs.m != 1:
             raise ValueError(
                 'Matrices with more than one columns cannot be unpacked')
         xs = xs.entries
@@ -86,9 +86,7 @@ def expr_init_list(xs, expected):
 @taichi_scope
 def expr_init_func(
         rhs):  # temporary solution to allow passing in fields as arguments
-    if isinstance(rhs, Field):
-        return rhs
-    return expr_init(rhs)
+    return rhs if isinstance(rhs, Field) else expr_init(rhs)
 
 
 def begin_frontend_struct_for(ast_builder, group, loop_range):
@@ -118,9 +116,7 @@ def begin_frontend_if(ast_builder, cond):
 
 
 def wrap_scalar(x):
-    if type(x) in [int, float]:
-        return Expr(x)
-    return x
+    return Expr(x) if type(x) in [int, float] else x
 
 
 @taichi_scope
@@ -134,10 +130,7 @@ def subscript(value, *_indices, skip_reordered=False):
 
     flattened_indices = []
     for _index in _indices:
-        if is_taichi_class(_index):
-            ind = _index.entries
-        else:
-            ind = [_index]
+        ind = _index.entries if is_taichi_class(_index) else [_index]
         flattened_indices += ind
     _indices = tuple(flattened_indices)
     if isinstance(_indices,
@@ -156,13 +149,16 @@ def subscript(value, *_indices, skip_reordered=False):
                   (MeshReorderedScalarFieldProxy,
                    MeshReorderedMatrixFieldProxy)) and not skip_reordered:
         assert index_dim == 1
-        reordered_index = tuple([
+        reordered_index = (
             Expr(
-                _ti_core.get_index_conversion(value.mesh_ptr,
-                                              value.element_type,
-                                              Expr(_indices[0]).ptr,
-                                              ConvType.g2r))
-        ])
+                _ti_core.get_index_conversion(
+                    value.mesh_ptr,
+                    value.element_type,
+                    Expr(_indices[0]).ptr,
+                    ConvType.g2r,
+                )
+            ),
+        )
         return subscript(value, *reordered_index, skip_reordered=True)
     if isinstance(value, SparseMatrixProxy):
         return value.subscript(*_indices)
@@ -317,18 +313,18 @@ class PyTaichi:
         return getattr(_var, 'declaration_tb', str(_var.ptr))
 
     def _check_field_not_placed(self):
-        not_placed = []
-        for _var in self.global_vars:
-            if _var.ptr.snode() is None:
-                not_placed.append(self._get_tb(_var))
-
+        not_placed = [
+            self._get_tb(_var)
+            for _var in self.global_vars
+            if _var.ptr.snode() is None
+        ]
         if len(not_placed):
             bar = '=' * 44 + '\n'
             raise RuntimeError(
-                f'These field(s) are not placed:\n{bar}' +
-                f'{bar}'.join(not_placed) +
-                f'{bar}Please consider specifying a shape for them. E.g.,' +
-                '\n\n  x = ti.field(float, shape=(2, 3))')
+                f"These field(s) are not placed:\n{bar}{f'{bar}'.join(not_placed)}"
+                + f'{bar}Please consider specifying a shape for them. E.g.,'
+                + '\n\n  x = ti.field(float, shape=(2, 3))'
+            )
 
     def _check_matrix_field_member_shape(self):
         for _field in self.matrix_fields:
@@ -399,8 +395,7 @@ def _clamp_unsigned_to_range(npty, val):
         return val
     cap = (1 << iif.bits)
     assert 0 <= val < cap
-    new_val = val - cap
-    return new_val
+    return val - cap
 
 
 @taichi_scope
@@ -553,7 +548,7 @@ def create_field_member(dtype, name):
         # adjoint
         x_grad = Expr(_ti_core.make_id_expr(""))
         x_grad.ptr = _ti_core.global_new(x_grad.ptr, dtype)
-        x_grad.ptr.set_name(name + ".grad")
+        x_grad.ptr.set_name(f"{name}.grad")
         x_grad.ptr.set_is_primal(False)
         x.ptr.set_grad(x_grad.ptr)
 
@@ -636,9 +631,7 @@ def ndarray(dtype, shape):
 @taichi_scope
 def ti_print(*_vars, sep=' ', end='\n'):
     def entry2content(_var):
-        if isinstance(_var, str):
-            return _var
-        return Expr(_var).ptr
+        return _var if isinstance(_var, str) else Expr(_var).ptr
 
     def list_ti_repr(_var):
         yield '['  # distinguishing tuple & list will increase maintainance cost
@@ -663,8 +656,7 @@ def ti_print(*_vars, sep=' ', end='\n'):
                 yield _var
                 continue
 
-            for v in vars2entries(res):
-                yield v
+            yield from vars2entries(res)
 
     def add_separators(_vars):
         for i, _var in enumerate(_vars):
@@ -738,16 +730,12 @@ def ti_assert(cond, msg, extra_args):
 
 @taichi_scope
 def ti_int(_var):
-    if hasattr(_var, '__ti_int__'):
-        return _var.__ti_int__()
-    return int(_var)
+    return _var.__ti_int__() if hasattr(_var, '__ti_int__') else int(_var)
 
 
 @taichi_scope
 def ti_float(_var):
-    if hasattr(_var, '__ti_float__'):
-        return _var.__ti_float__()
-    return float(_var)
+    return _var.__ti_float__() if hasattr(_var, '__ti_float__') else float(_var)
 
 
 @taichi_scope
@@ -864,9 +852,7 @@ def grouped(x):
         >>> for I in ti.grouped(ndrange(8, 16)):
         >>>     print(I[0] + I[1])
     """
-    if isinstance(x, _Ndrange):
-        return x.grouped()
-    return x
+    return x.grouped() if isinstance(x, _Ndrange) else x
 
 
 def stop_grad(x):

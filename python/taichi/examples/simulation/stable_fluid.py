@@ -340,10 +340,7 @@ while gui.running:
             paused = False
             reset()
         elif e.key == 's':
-            if curl_strength:
-                curl_strength = 0
-            else:
-                curl_strength = 7
+            curl_strength = 0 if curl_strength else 7
         elif e.key == 'g':
             gravity = not gravity
         elif e.key == 'v':
@@ -360,9 +357,6 @@ while gui.running:
             visualize_v = False
         elif e.key == 'p':
             paused = not paused
-        elif e.key == 'd':
-            debug = not debug
-
     # Debug divergence:
     # print(max((abs(velocity_divs.to_numpy().reshape(-1)))))
 

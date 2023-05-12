@@ -29,22 +29,16 @@ print((time.time() - t) / N * 1e9, 'ns')
 
 t = time.time()
 N = 1000000
-a = 0
-for i in range(N):
-    a += x[i, i]
+a = sum(x[i, i] for i in range(N))
 print((time.time() - t) / N * 1e9, 'ns')
 
 t = time.time()
 N = 1000000
-a = 0
 sin = getattr(libm, 'sin')
-for i in range(N):
-    a += sin(i)
+a = sum(sin(i) for i in range(N))
 print((time.time() - t) / N * 1e9, 'ns')
 
 t = time.time()
 N = 1000000
-a = 0
-for i in range(N):
-    a += math.sin(i)
+a = sum(math.sin(i) for i in range(N))
 print((time.time() - t) / N * 1e9, 'ns')

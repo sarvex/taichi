@@ -79,11 +79,10 @@ class Camera:
         self.position(*(self.curr_position + position_change))
         self.lookat(*(self.curr_lookat + position_change))
 
-        if hold_key is not None:
-            if not window.is_pressed(hold_key):
-                self.last_mouse_x = None
-                self.last_mouse_y = None
-                return
+        if hold_key is not None and not window.is_pressed(hold_key):
+            self.last_mouse_x = None
+            self.last_mouse_y = None
+            return
 
         curr_mouse_x, curr_mouse_y = window.get_cursor_pos()
         if self.last_mouse_x is None or self.last_mouse_y is None:

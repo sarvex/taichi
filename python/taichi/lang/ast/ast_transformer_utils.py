@@ -12,7 +12,7 @@ from taichi.lang.exception import (TaichiCompilationError, TaichiNameError,
 
 class Builder:
     def __call__(self, ctx, node):
-        method = getattr(self, 'build_' + node.__class__.__name__, None)
+        method = getattr(self, f'build_{node.__class__.__name__}', None)
         try:
             if method is None:
                 error_msg = f'Unsupported node "{node.__class__.__name__}"'
@@ -165,17 +165,13 @@ class ASTTransformerContext:
         return self.loop_scopes[-1]
 
     def loop_status(self):
-        if self.loop_scopes:
-            return self.loop_scopes[-1].status
-        return LoopStatus.Normal
+        return self.loop_scopes[-1].status if self.loop_scopes else LoopStatus.Normal
 
     def set_loop_status(self, status):
         self.loop_scopes[-1].status = status
 
     def is_in_static_for(self):
-        if self.loop_scopes:
-            return self.loop_scopes[-1].is_static
-        return False
+        return self.loop_scopes[-1].is_static if self.loop_scopes else False
 
     def is_in_non_static_control_flow(self):
         return self.non_static_control_flow_status.is_in_non_static_control_flow
@@ -184,10 +180,7 @@ class ASTTransformerContext:
         return self.static_scope_status.is_in_static_scope
 
     def is_var_declared(self, name):
-        for s in self.local_scopes:
-            if name in s:
-                return True
-        return False
+        return any(name in s for s in self.local_scopes)
 
     def create_variable(self, name, var):
         if name in self.current_scope():

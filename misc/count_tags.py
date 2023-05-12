@@ -9,7 +9,7 @@ authors = {}
 notable = {}
 changelog = {}
 
-for i, c in enumerate(commits):
+for c in commits:
     s = c.summary
 
     tags = []

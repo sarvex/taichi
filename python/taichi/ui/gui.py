@@ -137,9 +137,7 @@ class GUI:
         Return:
             The environment variable value cast to bool. If the value is not found, directly return argument 'default'.
         """
-        if key not in os.environ:
-            return default
-        return bool(int(os.environ[key]))
+        return default if key not in os.environ else bool(int(os.environ[key]))
 
     def slider(self, text, minimum, maximum, step=1):
         """Create a slider object on canvas to be manipulated with.
@@ -370,8 +368,7 @@ class GUI:
 
             if isinstance(palette_indices, Field):
                 ind_int = palette_indices.to_numpy().astype(np.uint32)
-            elif isinstance(palette_indices, list) or isinstance(
-                    palette_indices, np.ndarray):
+            elif isinstance(palette_indices, (list, np.ndarray)):
                 ind_int = np.array(palette_indices).astype(np.uint32)
             else:
                 try:
@@ -696,11 +693,7 @@ class GUI:
         def match(self, e):
             if (e.type, e.key) in self.filter:
                 return True
-            if e.type in self.filter:
-                return True
-            if e.key in self.filter:
-                return True
-            return False
+            return True if e.type in self.filter else e.key in self.filter
 
     def has_key_event(self):
         """Check if there are any key event registered.
@@ -764,11 +757,7 @@ class GUI:
         e.pos = (e.pos[0], e.pos[1])
         e.modifier = []
 
-        if e.key == GUI.WHEEL:
-            e.delta = event.delta
-        else:
-            e.delta = (0, 0)
-
+        e.delta = event.delta if e.key == GUI.WHEEL else (0, 0)
         for mod in ['Shift', 'Alt', 'Control']:
             if self.is_pressed(mod):
                 e.modifier.append(mod)
@@ -792,9 +781,10 @@ class GUI:
 
         """
         for key in keys:
-            if key in ['Shift', 'Alt', 'Control']:
-                if key + '_L' in self.key_pressed or key + '_R' in self.key_pressed:
-                    return True
+            if key in ['Shift', 'Alt', 'Control'] and (
+                f'{key}_L' in self.key_pressed or f'{key}_R' in self.key_pressed
+            ):
+                return True
             if key in self.key_pressed:
                 return True
         else:
@@ -841,10 +831,7 @@ class GUI:
 
     @fps_limit.setter
     def fps_limit(self, value):
-        if value is None:
-            self.core.frame_delta_limit = 0
-        else:
-            self.core.frame_delta_limit = 1 / value
+        self.core.frame_delta_limit = 0 if value is None else 1 / value
 
 
 def rgb_to_hex(c):
@@ -918,7 +905,6 @@ def core_vec(*args):
         if len(args) == 4:
             return _ti_core.Vector4f(float(args[0]), float(args[1]),
                                      float(args[2]), float(args[3]))
-        assert False, type(args[0])
     else:
         if len(args) == 2:
             return _ti_core.Vector2d(float(args[0]), float(args[1]))
@@ -928,7 +914,8 @@ def core_vec(*args):
         if len(args) == 4:
             return _ti_core.Vector4d(float(args[0]), float(args[1]),
                                      float(args[2]), float(args[3]))
-        assert False, type(args[0])
+
+    assert False, type(args[0])
 
 
 __all__ = [

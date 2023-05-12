@@ -35,10 +35,7 @@ def test_advanced_unused_store_elimination_if():
         a = 1
         if val[None]:
             a = 2
-            if val[None]:
-                a = 3
-            else:
-                a = 4
+            a = 3 if val[None] else 4
             val[None] = a
         else:
             val[None] = a

@@ -71,75 +71,72 @@ class Matrix(TaichiOperations):
                         [len(n)], dt,
                         expr.make_expr_group([expr.Expr(x) for x in n]))
                     self.dynamic_index_stride = 1
-                    mat = []
-                    for i in range(len(n)):
-                        mat.append(
-                            list([
-                                impl.make_tensor_element_expr(
-                                    self.local_tensor_proxy,
-                                    (impl.make_constant_expr_i32(i), ),
-                                    (len(n), ), self.dynamic_index_stride)
-                            ]))
-            else:  # now init a Matrix
-                if in_python_scope():
-                    mat = [list(row) for row in n]
-                elif not impl.current_cfg().dynamic_index:
-                    mat = [[impl.expr_init(x) for x in row] for row in n]
-                else:
-                    if not ti_core.is_extension_supported(
-                            impl.current_cfg().arch,
-                            ti_core.Extension.dynamic_index):
-                        raise Exception(
-                            f"Backend {impl.current_cfg().arch} doesn't support dynamic index"
-                        )
-                    if dt is None:
-                        if isinstance(n[0][0], (int, np.integer)):
-                            dt = impl.get_runtime().default_ip
-                        elif isinstance(n[0][0], float):
-                            dt = impl.get_runtime().default_fp
-                        elif isinstance(n[0][0], expr.Expr):
-                            dt = n[0][0].ptr.get_ret_type()
-                            if dt == ti_core.DataType_unknown:
-                                raise TypeError(
-                                    'Element type of the matrix cannot be inferred. Please set dt instead for now.'
-                                )
-                        else:
-                            raise Exception(
-                                'dt required when using dynamic_index for local tensor'
+                    mat = [
+                        [
+                            impl.make_tensor_element_expr(
+                                self.local_tensor_proxy,
+                                (impl.make_constant_expr_i32(i),),
+                                (len(n),),
+                                self.dynamic_index_stride,
                             )
-                    self.local_tensor_proxy = impl.expr_init_local_tensor(
-                        [len(n), len(n[0])], dt,
-                        expr.make_expr_group(
-                            [expr.Expr(x) for row in n for x in row]))
-                    self.dynamic_index_stride = 1
-                    mat = []
-                    for i in range(len(n)):
-                        mat.append([])
-                        for j in range(len(n[0])):
-                            mat[i].append(
-                                impl.make_tensor_element_expr(
-                                    self.local_tensor_proxy,
-                                    (impl.make_constant_expr_i32(i),
-                                     impl.make_constant_expr_i32(j)),
-                                    (len(n), len(n[0])),
-                                    self.dynamic_index_stride))
-            self.n = len(mat)
-            if len(mat) > 0:
-                self.m = len(mat[0])
+                        ]
+                        for i in range(len(n))
+                    ]
+            elif in_python_scope():
+                mat = [list(row) for row in n]
+            elif not impl.current_cfg().dynamic_index:
+                mat = [[impl.expr_init(x) for x in row] for row in n]
             else:
-                self.m = 1
+                if not ti_core.is_extension_supported(
+                        impl.current_cfg().arch,
+                        ti_core.Extension.dynamic_index):
+                    raise Exception(
+                        f"Backend {impl.current_cfg().arch} doesn't support dynamic index"
+                    )
+                if dt is None:
+                    if isinstance(n[0][0], (int, np.integer)):
+                        dt = impl.get_runtime().default_ip
+                    elif isinstance(n[0][0], float):
+                        dt = impl.get_runtime().default_fp
+                    elif isinstance(n[0][0], expr.Expr):
+                        dt = n[0][0].ptr.get_ret_type()
+                        if dt == ti_core.DataType_unknown:
+                            raise TypeError(
+                                'Element type of the matrix cannot be inferred. Please set dt instead for now.'
+                            )
+                    else:
+                        raise Exception(
+                            'dt required when using dynamic_index for local tensor'
+                        )
+                self.local_tensor_proxy = impl.expr_init_local_tensor(
+                    [len(n), len(n[0])], dt,
+                    expr.make_expr_group(
+                        [expr.Expr(x) for row in n for x in row]))
+                self.dynamic_index_stride = 1
+                mat = []
+                for i in range(len(n)):
+                    mat.append([])
+                    for j in range(len(n[0])):
+                        mat[i].append(
+                            impl.make_tensor_element_expr(
+                                self.local_tensor_proxy,
+                                (impl.make_constant_expr_i32(i),
+                                 impl.make_constant_expr_i32(j)),
+                                (len(n), len(n[0])),
+                                self.dynamic_index_stride))
+            self.n = len(mat)
+            self.m = len(mat[0]) if len(mat) > 0 else 1
             self.entries = [x for row in mat for x in row]
 
-        else:
-            if dt is None:
+        elif dt is None:
                 # create a local matrix with specific (n, m)
-                self.entries = [impl.expr_init(None) for i in range(n * m)]
-                self.n = n
-                self.m = m
-            else:
-                raise ValueError(
-                    "Declaring matrix fields using `ti.Matrix(n, m, dt, shape)` is no longer supported. "
-                    "Use `ti.Matrix.field(n, m, dtype, shape)` instead.")
+            self.entries = [impl.expr_init(None) for _ in range(n * m)]
+            self.n = n
+            self.m = m
+        else:
+            raise ValueError(
+                "Declaring matrix fields using `ti.Matrix(n, m, dt, shape)` is no longer supported. "
+                "Use `ti.Matrix.field(n, m, dtype, shape)` instead.")
 
         if self.n * self.m > 32 and not suppress_warning:
             warning(
@@ -238,7 +235,7 @@ class Matrix(TaichiOperations):
         return args[0] * self.m + args[1]
 
     def __call__(self, *args, **kwargs):
-        assert kwargs == {}
+        assert not kwargs
         ret = self.entries[self._linearize_entry_id(*args)]
         if isinstance(ret, SNodeHostAccess):
             ret = ret.accessor.getter(*ret.key)
@@ -250,17 +247,16 @@ class Matrix(TaichiOperations):
         idx = self._linearize_entry_id(i, j)
         if impl.inside_kernel():
             self.entries[idx]._assign(e)
+        elif isinstance(self.entries[idx], SNodeHostAccess):
+            self.entries[idx].accessor.setter(e, *self.entries[idx].key)
+        elif isinstance(self.entries[idx], NdarrayHostAccess):
+            self.entries[idx].setter(e)
         else:
-            if isinstance(self.entries[idx], SNodeHostAccess):
-                self.entries[idx].accessor.setter(e, *self.entries[idx].key)
-            elif isinstance(self.entries[idx], NdarrayHostAccess):
-                self.entries[idx].setter(e)
-            else:
-                self.entries[idx] = e
+            self.entries[idx] = e
 
     @taichi_scope
     def _subscript(self, *indices):
-        assert len(indices) in [1, 2]
+        assert len(indices) in {1, 2}
         i = indices[0]
         j = 0 if len(indices) == 1 else indices[1]
 
@@ -286,30 +282,22 @@ class Matrix(TaichiOperations):
     @property
     def x(self):
         """Get the first element of a matrix."""
-        if impl.inside_kernel():
-            return self._subscript(0)
-        return self[0]
+        return self._subscript(0) if impl.inside_kernel() else self[0]
 
     @property
     def y(self):
         """Get the second element of a matrix."""
-        if impl.inside_kernel():
-            return self._subscript(1)
-        return self[1]
+        return self._subscript(1) if impl.inside_kernel() else self[1]
 
     @property
     def z(self):
         """Get the third element of a matrix."""
-        if impl.inside_kernel():
-            return self._subscript(2)
-        return self[2]
+        return self._subscript(2) if impl.inside_kernel() else self[2]
 
     @property
     def w(self):
         """Get the fourth element of a matrix."""
-        if impl.inside_kernel():
-            return self._subscript(3)
-        return self[3]
+        return self._subscript(3) if impl.inside_kernel() else self[3]
 
     # since Taichi-scope use v.x.assign() instead
     @x.setter
@@ -349,7 +337,7 @@ class Matrix(TaichiOperations):
         """
         if not isinstance(indices, (list, tuple)):
             indices = [indices]
-        assert len(indices) in [1, 2]
+        assert len(indices) in {1, 2}
         i = indices[0]
         j = 0 if len(indices) == 1 else indices[1]
         return self(i, j)
@@ -364,7 +352,7 @@ class Matrix(TaichiOperations):
         """
         if not isinstance(indices, (list, tuple)):
             indices = [indices]
-        assert len(indices) in [1, 2]
+        assert len(indices) in {1, 2}
         i = indices[0]
         j = 0 if len(indices) == 1 else indices[1]
         self._set_entry(i, j, item)
@@ -817,20 +805,20 @@ class Matrix(TaichiOperations):
                 assert len(np.shape(dtype)) == 1 and len(
                     dtype
                 ) == n, f'Please set correct dtype list for Vector. The shape of dtype list should be ({n}, ) instead of {np.shape(dtype)}'
-                for i in range(n):
-                    entries.append(
-                        impl.create_field_member(dtype[i], name=name))
+                entries.extend(impl.create_field_member(dtype[i], name=name) for i in range(n))
             else:
                 assert len(np.shape(dtype)) == 2 and len(dtype) == n and len(
                     dtype[0]
                 ) == m, f'Please set correct dtype list for Matrix. The shape of dtype list should be ({n}, {m}) instead of {np.shape(dtype)}'
                 for i in range(n):
-                    for j in range(m):
-                        entries.append(
-                            impl.create_field_member(dtype[i][j], name=name))
+                    entries.extend(
+                        impl.create_field_member(dtype[i][j], name=name)
+                        for j in range(m)
+                    )
         else:
-            for _ in range(n * m):
-                entries.append(impl.create_field_member(dtype, name=name))
+            entries.extend(
+                impl.create_field_member(dtype, name=name) for _ in range(n * m)
+            )
         entries, entries_grad = zip(*entries)
         entries, entries_grad = MatrixField(entries, n, m), MatrixField(
             entries_grad, n, m)
@@ -1109,7 +1097,7 @@ class MatrixField(Field):
         Returns:
             ScalarField: The result ScalarField.
         """
-        assert len(indices) in [1, 2]
+        assert len(indices) in {1, 2}
         i = indices[0]
         j = 0 if len(indices) == 1 else indices[1]
         return ScalarField(self.vars[i * self.m + j])
@@ -1153,18 +1141,15 @@ class MatrixField(Field):
             val (Union[Number, List, Tuple, Matrix]): Values to fill, which should have dimension consistent with `self`.
         """
         if isinstance(val, numbers.Number):
-            val = tuple(
-                [tuple([val for _ in range(self.m)]) for _ in range(self.n)])
+            val = tuple(tuple(val for _ in range(self.m)) for _ in range(self.n))
         elif isinstance(val,
                         (list, tuple)) and isinstance(val[0], numbers.Number):
             assert self.m == 1
-            val = tuple([(v, ) for v in val])
+            val = tuple((v, ) for v in val)
         elif isinstance(val, Matrix):
             val_tuple = []
             for i in range(val.n):
-                row = []
-                for j in range(val.m):
-                    row.append(val(i, j))
+                row = [val(i, j) for j in range(val.m)]
                 row = tuple(row)
                 val_tuple.append(row)
             val = tuple(val_tuple)
@@ -1259,7 +1244,7 @@ class MatrixType(CompoundType):
         self.dtype = cook_dtype(dtype)
 
     def __call__(self, *args):
-        if len(args) == 0:
+        if not args:
             raise TaichiSyntaxError(
                 "Custom type instances need to be created with an initial value."
             )
@@ -1282,9 +1267,7 @@ class MatrixType(CompoundType):
         # convert vector to nx1 matrix
         if isinstance(entries[0], numbers.Number):
             entries = [[e] for e in entries]
-        # type cast
-        mat = self.cast(Matrix(entries, dt=self.dtype))
-        return mat
+        return self.cast(Matrix(entries, dt=self.dtype))
 
     def cast(self, mat):
         # sanity check shape

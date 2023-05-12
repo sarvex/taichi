@@ -198,7 +198,7 @@ def intersect_aabb_transformed(box_min, box_max, o, d):
     obj_d = mat_mul_vec(box_m_inv, d)
     intersect, near_t, _, near_norm = intersect_aabb(box_min, box_max, obj_o,
                                                      obj_d)
-    if intersect and 0 < near_t:
+    if intersect and near_t > 0:
         # Transform the normal in the box's local space to world space
         near_norm = mat_mul_vec(box_m_inv_t, near_norm)
     else:
@@ -376,8 +376,7 @@ def sample_direct_light(hit_pos, hit_normal, hit_color):
         light_pdf = compute_area_light_pdf(hit_pos, to_light_dir)
         brdf_pdf = compute_brdf_pdf(hit_normal, to_light_dir)
         if light_pdf > 0 and brdf_pdf > 0:
-            l_visible = visible_to_light(hit_pos, to_light_dir)
-            if l_visible:
+            if l_visible := visible_to_light(hit_pos, to_light_dir):
                 w = mis_power_heuristic(light_pdf, brdf_pdf)
                 nl = dot_or_zero(to_light_dir, hit_normal)
                 direct_li += fl * w * nl / light_pdf
@@ -388,8 +387,7 @@ def sample_direct_light(hit_pos, hit_normal, hit_color):
     if brdf_pdf > 0:
         light_pdf = compute_area_light_pdf(hit_pos, brdf_dir)
         if light_pdf > 0:
-            l_visible = visible_to_light(hit_pos, brdf_dir)
-            if l_visible:
+            if l_visible := visible_to_light(hit_pos, brdf_dir):
                 w = mis_power_heuristic(brdf_pdf, light_pdf)
                 nl = dot_or_zero(brdf_dir, hit_normal)
                 direct_li += fl * w * nl / brdf_pdf
@@ -424,13 +422,8 @@ def sample_ray_dir(indir, normal, hit_pos, mat):
             ni_over_nt = 1.0 / refr_idx
             cos = -cos
         has_refr, refr_dir = refract(indir, outn, ni_over_nt)
-        refl_prob = 1.0
-        if has_refr:
-            refl_prob = schlick(cos, refr_idx)
-        if ti.random() < refl_prob:
-            u = reflect(indir, normal)
-        else:
-            u = refr_dir
+        refl_prob = schlick(cos, refr_idx) if has_refr else 1.0
+        u = reflect(indir, normal) if ti.random() < refl_prob else refr_dir
     return u.normalized(), pdf
 
 

@@ -24,13 +24,10 @@ class MicroBenchmark:
         self._info = {}
 
     def get_benchmark_info(self):
-        info_dict = {}
-        arch_list = []
-        for arch, item in self.config.items():
-            if item['enable'] == True:
-                arch_list.append(arch)
-        info_dict['archs'] = arch_list
-        return info_dict
+        arch_list = [
+            arch for arch, item in self.config.items() if item['enable'] == True
+        ]
+        return {'archs': arch_list}
 
     def run(self):
         for arch, item in self.config.items():
@@ -59,7 +56,7 @@ class MicroBenchmark:
 
     def _save_cases_as_json(self, arch, arch_dir='./'):
         for case in self._info[arch]:
-            case_path = os.path.join(arch_dir, (case + '.json'))
+            case_path = os.path.join(arch_dir, f'{case}.json')
             case_results = self._results[arch][case]
             with open(case_path, 'w') as f:
                 case_str = dump2json(case_results)

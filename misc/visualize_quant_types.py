@@ -33,10 +33,7 @@ def set_vals(x: ti.f32, y: ti.f32):
 
 
 def serialize_i32(x):
-    s = ''
-    for i in reversed(range(32)):
-        s += f'{(x>>i) & 1}'
-    return s
+    return ''.join(f'{x >> i & 1}' for i in reversed(range(32)))
 
 
 def serialize_f32(x):
@@ -148,11 +145,8 @@ for i in range(frames * 2 + 1):
 
     def real_to_str(x):
         s = ''
-        if x < 0:
-            s = ''
-        else:
-            s = ' '
-        return s + f'{x:.4f}'
+        s = '' if x < 0 else ' '
+        return f'{s}{x:.4f}'
 
     numbers.text(real_to_str(x), (0.05, 0.9), font_size=fs, color=color)
     numbers.text(real_to_str(y), (0.55, 0.9), font_size=fs, color=color)

@@ -109,7 +109,7 @@ def test_parent_exceeded():
     assert val.snode.parent() == blk2
     assert val.snode.parent(2) == blk1
     assert val.snode.parent(3) == ti.root
-    assert val.snode.parent(4) == None
-    assert val.snode.parent(42) == None
+    assert val.snode.parent(4) is None
+    assert val.snode.parent(42) is None
 
-    assert ti.root.parent() == None
+    assert ti.root.parent() is None

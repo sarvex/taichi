@@ -27,7 +27,7 @@ def foo():
         y[i] = i & 15
 
 
-for i in range(10):
+for _ in range(10):
     foo()
 
 ti.print_kernel_profile_info()

@@ -114,16 +114,14 @@ class TaichiMain:
         """Get the path to the examples directory."""
 
         root_dir = utils.package_root
-        examples_dir = Path(root_dir) / 'examples'
-        return examples_dir
+        return Path(root_dir) / 'examples'
 
     @staticmethod
     def _get_available_examples() -> set:
         """Get a set of all available example names."""
         examples_dir = TaichiMain._get_examples_dir()
         all_examples = examples_dir.rglob('*.py')
-        all_example_names = {f.stem: f.parent for f in all_examples}
-        return all_example_names
+        return {f.stem: f.parent for f in all_examples}
 
     @staticmethod
     def _example_choices_type(choices):
@@ -457,7 +455,7 @@ class TaichiMain:
         def parse_dat(file):
             _dict = {}
             with open(file) as f:
-                for line in f.readlines():
+                for line in f:
                     try:
                         a, b = line.strip().split(':')
                     except:
@@ -469,9 +467,9 @@ class TaichiMain:
             return _dict
 
         def parse_name(file):
-            if file[0:5] == 'test_':
+            if file[:5] == 'test_':
                 return file[5:-4].replace('__test_', '::', 1)
-            if file[0:10] == 'benchmark_':
+            if file[:10] == 'benchmark_':
                 return '::'.join(reversed(file[10:-4].split('__arch_')))
             raise Exception(f'bad benchmark file name {file}')
 
@@ -513,10 +511,7 @@ class TaichiMain:
                     continue
                 a, b = u.get(key, 0), v.get(key, 0)
                 if a == 0:
-                    if b == 0:
-                        res = 1.0
-                    else:
-                        res = math.inf
+                    res = 1.0 if b == 0 else math.inf
                 else:
                     res = b / a
                 scatter[key].append(res)
@@ -530,18 +525,12 @@ class TaichiMain:
                     color = Fore.RED
                 elif res < 0:
                     color = Fore.GREEN
-                if isinstance(a, float):
-                    a = f'{a:>7.2}'
-                else:
-                    a = f'{a:>7}'
-                if isinstance(b, float):
-                    b = f'{b:>7.2}'
-                else:
-                    b = f'{b:>7}'
+                a = f'{a:>7.2}' if isinstance(a, float) else f'{a:>7}'
+                b = f'{b:>7.2}' if isinstance(b, float) else f'{b:>7}'
                 ret += f'{Fore.MAGENTA}{a}{Fore.RESET} -> '
                 ret += f'{Fore.CYAN}{b} {color}{res:>+9.1%}{Fore.RESET}\n'
             if ret != '':
-                print(f'{file + "::" + func:_<58}', end='')
+                print(f'{f"{file}::{func}":_<58}', end='')
                 if not single_line:
                     print('')
                 print(ret, end='')

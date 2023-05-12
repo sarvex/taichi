@@ -76,8 +76,6 @@ def test_unconditional_continue():
         for _ in range(1):
             for j in range(n):
                 continue
-                # pylint: disable=unreachable
-                x[j] = j
 
     run()
     xs = x.to_numpy()
@@ -92,12 +90,10 @@ def test_kernel_continue_in_nested_if():
     @ti.kernel
     def run(a: ti.i32):
         for i in range(1):
-            if a:
-                if a:
-                    continue
-            if a:
-                if a:
-                    continue
+            if a and a:
+                continue
+            if a and a:
+                continue
             x[i] = i
 
     x[0] = 1
@@ -114,9 +110,8 @@ def test_kernel_continue_in_nested_if_2():
     @ti.kernel
     def run(a: ti.i32):
         for i in range(1):
-            if a:
-                if a:
-                    continue
+            if a and a:
+                continue
             if a:
                 continue
             x[i] = i
@@ -137,9 +132,8 @@ def test_kernel_continue_in_nested_if_3():
         for i in range(1):
             if a:
                 continue
-            if a:
-                if a:
-                    continue
+            if a and a:
+                continue
             x[i] = i
 
     x[0] = 1

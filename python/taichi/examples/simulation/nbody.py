@@ -94,7 +94,7 @@ while gui.running:
             paused[None] = not paused[None]
 
     if not paused[None]:
-        for i in range(substepping):
+        for _ in range(substepping):
             compute_force()
             update()
 

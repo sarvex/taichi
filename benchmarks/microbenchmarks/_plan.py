@@ -15,10 +15,14 @@ class Funcs():
         self._funcs[tags2name(tag_list)] = {'tags': tag_list, 'func': func}
 
     def get_func(self, tags):
-        for name, item in self._funcs.items():
-            if set(item['tags']).issubset(tags):
-                return item['func']
-        return None
+        return next(
+            (
+                item['func']
+                for name, item in self._funcs.items()
+                if set(item['tags']).issubset(tags)
+            ),
+            None,
+        )
 
 
 class BenchmarkPlan:
@@ -55,20 +59,19 @@ class BenchmarkPlan:
             plan['result'] = _ms
             print(f'{tag_list}={_ms}')
             ti.reset()
-        rdict = {'results': self.plan, 'info': self.info}
-        return rdict
+        return {'results': self.plan, 'info': self.info}
 
     def _get_kwargs(self, tags, impl=True):
-        kwargs = {}
         tags = tags[1:]  # tags = [case_name, item1_tag, item2_tag, ...]
-        for item, tag in zip(self.items.values(), tags):
-            kwargs[item.name] = item.impl(tag) if impl == True else tag
-        return kwargs
+        return {
+            item.name: item.impl(tag) if impl == True else tag
+            for item, tag in zip(self.items.values(), tags)
+        }
 
     def _remove_conflict_items(self):
         remove_list = []
         #logical_atomic with float_type
-        if set([AtomicOps.name, DataType.name]).issubset(self.items.keys()):
+        if {AtomicOps.name, DataType.name}.issubset(self.items.keys()):
             for name, case in self.plan.items():
                 kwargs_tag = self._get_kwargs(case['tags'], impl=False)
                 atomic_tag = kwargs_tag[AtomicOps.name]
@@ -80,10 +83,11 @@ class BenchmarkPlan:
             self.plan.pop(name)
 
     def remove_cases_with_tags(self, tags: list):
-        remove_list = []
-        for case, plan in self.plan.items():
-            if set(tags).issubset(plan['tags']):
-                remove_list.append(case)
+        remove_list = [
+            case
+            for case, plan in self.plan.items()
+            if set(tags).issubset(plan['tags'])
+        ]
         #remove
         for case in remove_list:
             self.plan.pop(case)

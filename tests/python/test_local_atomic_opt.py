@@ -10,7 +10,7 @@ def test_cse():
     def func():
         a = 0
         a += 10
-        a = a + 123
+        a += 123
         A[None] = a
 
     func()

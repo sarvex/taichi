@@ -118,7 +118,7 @@ class _EnvironmentConfigurator:
         # TI_ASYNC=   : no effect
         # TI_ASYNC=0  : False
         # TI_ASYNC=1  : True
-        name = 'TI_' + key.upper()
+        name = f'TI_{key.upper()}'
         value = os.environ.get(name, '')
         if len(value):
             self[key] = _cast(value)
@@ -177,13 +177,10 @@ def check_require_version(require_version):
             break
     # Get required version.
     try:
-        version_number_tuple = tuple(
-            [int(n) for n in version_number_str.split(".")])
+        version_number_tuple = tuple(int(n) for n in version_number_str.split("."))
         major = version_number_tuple[0]
         minor = version_number_tuple[1]
-        patch = 0
-        if len(version_number_tuple) > 2:
-            patch = version_number_tuple[2]
+        patch = version_number_tuple[2] if len(version_number_tuple) > 2 else 0
     except:
         raise Exception("The require_version should be formatted following PEP 440, " \
             "and inlucdes major, minor, and patch number, " \
@@ -252,10 +249,7 @@ def init(arch=None,
     env_comp = _EnvironmentConfigurator(kwargs, cfg)
     env_spec = _EnvironmentConfigurator(kwargs, spec_cfg)
 
-    # configure default_fp/ip:
-    # TODO: move these stuff to _SpecialConfig too:
-    env_default_fp = os.environ.get("TI_DEFAULT_FP")
-    if env_default_fp:
+    if env_default_fp := os.environ.get("TI_DEFAULT_FP"):
         if default_fp is not None:
             _ti_core.warn(
                 f'ti.init argument "default_fp" overridden by environment variable TI_DEFAULT_FP={env_default_fp}'
@@ -268,8 +262,7 @@ def init(arch=None,
             raise ValueError(
                 f'Invalid TI_DEFAULT_FP={env_default_fp}, should be 32 or 64')
 
-    env_default_ip = os.environ.get("TI_DEFAULT_IP")
-    if env_default_ip:
+    if env_default_ip := os.environ.get("TI_DEFAULT_IP"):
         if default_ip is not None:
             _ti_core.warn(
                 f'ti.init argument "default_ip" overridden by environment variable TI_DEFAULT_IP={env_default_ip}'

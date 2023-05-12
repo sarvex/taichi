@@ -230,6 +230,6 @@ def parallel_sort(keys, values=None):
                 sort_stage(keys, 1, values, N, p, k, invocations)
             num_stages += 1
             sync()
-            k = int(k / 2)
+            k //= 2
         p = int(p * 2)
     print(num_stages)

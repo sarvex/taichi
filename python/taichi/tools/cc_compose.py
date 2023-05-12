@@ -12,7 +12,7 @@ class ComposerBase:
     def run(self):
         for e in self.entries:
             action = e['action']
-            func = getattr(self, 'do_' + action, self.do_unknown)
+            func = getattr(self, f'do_{action}', self.do_unknown)
             func(e)
 
     def do_unknown(self, e):
@@ -77,10 +77,10 @@ class ComposerCC(ComposerBase):
 
     def do_allocate_buffer(self, e):
         gtmp_size = e['gtmp_size']
-        extr_size = 4 * 1024 * 1024  # pinpoint: 4 MB
-
         if self.emscripten:
             self.emit('EMSCRIPTEN_KEEPALIVE')
+            extr_size = 4 * 1024 * 1024  # pinpoint: 4 MB
+
             self.emit(f'Ti_i8 Ti_extr[{extr_size}];')
 
         self.emit(f'Ti_i8 Ti_gtmp[{gtmp_size}];')

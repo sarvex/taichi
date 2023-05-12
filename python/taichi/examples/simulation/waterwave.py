@@ -21,10 +21,7 @@ velocity = ti.field(dtype=float, shape=shape)
 def reset():
     for i, j in height:
         t = i // 16 + j // 16
-        if t % 2 == 0:
-            background[i, j] = 0.0
-        else:
-            background[i, j] = 0.25
+        background[i, j] = 0.0 if t % 2 == 0 else 0.25
         height[i, j] = 0
         velocity[i, j] = 0
 

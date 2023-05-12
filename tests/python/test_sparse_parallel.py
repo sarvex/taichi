@@ -24,7 +24,7 @@ def test_pointer():
 
     activate()
     func()
-    assert s[None] == n * n
+    assert s[None] == n**2
 
 
 @test_utils.test(require=ti.extension.sparse)
@@ -39,7 +39,7 @@ def test_pointer2():
 
     @ti.kernel
     def activate():
-        for i in range(n * n):
+        for i in range(n**2):
             x[i] = i
 
     @ti.kernel
@@ -49,7 +49,7 @@ def test_pointer2():
 
     activate()
     func()
-    N = n * n
+    N = n**2
     assert s[None] == N * (N - 1) / 2
 
 

@@ -31,11 +31,8 @@ def patch_os_environ_helper(custom_environ: dict, excludes: dict):
     :parameter excludes:
         When copying from os.environ, specify keys to be excluded.
     """
-    environ = {}
-    for key in os.environ.keys():
-        if key not in excludes:
-            environ[key] = os.environ[key]
-    for key in custom_environ.keys():
+    environ = {key: os.environ[key] for key in os.environ if key not in excludes}
+    for key in custom_environ:
         environ[key] = custom_environ[key]
     try:
         cached_environ = os.environ
@@ -71,7 +68,7 @@ init_args = {
     #'device_memory_GB': [1.0, [0.5, 1, 1.5, 2]],
 }
 
-env_configs = ['TI_' + key.upper() for key in init_args.keys()]
+env_configs = [f'TI_{key.upper()}' for key in init_args]
 
 special_init_cfgs = [
     'log_level',
@@ -103,7 +100,7 @@ def test_init_arg(key, values):
             test_arg(key, value, kwargs)
 
     # test if specified in environment:
-    env_key = 'TI_' + key.upper()
+    env_key = f'TI_{key.upper()}'
     for value in values:
         env_value = str(int(value) if isinstance(value, bool) else value)
         environ = {env_key: env_value}
@@ -129,18 +126,14 @@ def test_init_bad_arg():
 
 def test_init_require_version():
     ti_core = ti._lib.utils.import_ti_core()
-    require_version = '{}.{}.{}'.format(ti_core.get_version_major(),
-                                        ti_core.get_version_minor(),
-                                        ti_core.get_version_patch())
+    require_version = f'{ti_core.get_version_major()}.{ti_core.get_version_minor()}.{ti_core.get_version_patch()}'
     ti.init(_test_mode=True, debug=True, require_version=require_version)
 
 
 def test_init_bad_require_version():
     with pytest.raises(Exception):
         ti_core = ti._lib.utils.import_ti_core()
-        bad_require_version = '{}.{}.{}'.format(
-            ti_core.get_version_major(), ti_core.get_version_minor(),
-            ti_core.get_version_patch() + 1)
+        bad_require_version = f'{ti_core.get_version_major()}.{ti_core.get_version_minor()}.{ti_core.get_version_patch() + 1}'
         ti.init(_test_mode=True,
                 debug=True,
                 require_version=bad_require_version)

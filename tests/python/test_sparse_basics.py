@@ -39,7 +39,7 @@ def test_pointer_is_active():
 
     @ti.kernel
     def func():
-        for i in range(n * n):
+        for i in range(n**2):
             s[None] += ti.is_active(x.parent().parent(), i)
 
     x[0] = 1
@@ -67,15 +67,15 @@ def _test_pointer2():
     x[0] = 1
     x[127] = 1
     x[254] = 1
-    x[256 + n * n] = 1
+    x[256 + n**2] = 1
 
-    x[257 + n * n] = 1
-    x[257 + n * n * 2] = 1
-    x[257 + n * n * 5] = 1
+    x[257 + n**2] = 1
+    x[257 + n**2 * 2] = 1
+    x[257 + n**2 * 5] = 1
 
     func()
     assert s[None] == 5 * n
-    print(x[257 + n * n * 7])
+    print(x[257 + n**2 * 7])
     assert s[None] == 5 * n
 
 

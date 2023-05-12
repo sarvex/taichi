@@ -214,17 +214,12 @@ class MeshElement:
             self.attr_dict[key] = MeshAttrType(key, dtype, reorder, needs_grad)
 
     def build(self, mesh_instance, size, g2r_field):
-        field_dict = {}
-
-        for key, attr in self.attr_dict.items():
-            if isinstance(attr.dtype, CompoundType):
-                field_dict[key] = attr.dtype.field(shape=None,
-                                                   needs_grad=attr.needs_grad)
-            else:
-                field_dict[key] = impl.field(attr.dtype,
-                                             shape=None,
-                                             needs_grad=attr.needs_grad)
-
+        field_dict = {
+            key: attr.dtype.field(shape=None, needs_grad=attr.needs_grad)
+            if isinstance(attr.dtype, CompoundType)
+            else impl.field(attr.dtype, shape=None, needs_grad=attr.needs_grad)
+            for key, attr in self.attr_dict.items()
+        }
         if self.layout == Layout.SOA:
             for key, field in field_dict.items():
                 impl.root.dense(impl.axes(0), size).place(field)
@@ -233,11 +228,11 @@ class MeshElement:
         elif len(field_dict) > 0:
             impl.root.dense(impl.axes(0),
                             size).place(*tuple(field_dict.values()))
-            grads = []
-            for key, field in field_dict.items():
-                if self.attr_dict[key].needs_grad:
-                    grads.append(field.grad)
-            if len(grads) > 0:
+            if grads := [
+                field.grad
+                for key, field in field_dict.items()
+                if self.attr_dict[key].needs_grad
+            ]:
                 impl.root.dense(impl.axes(0), size).place(*grads)
 
         return MeshElementField(mesh_instance, self._type, self.attr_dict,
@@ -246,7 +241,7 @@ class MeshElement:
     def link(self, element):
         assert isinstance(element, MeshElement)
         assert element.builder == self.builder
-        self.builder.relations.add(tuple([self._type, element._type]))
+        self.builder.relations.add((self._type, element._type))
         self.builder.elements.add(self._type)
         self.builder.elements.add(element._type)
 
@@ -316,9 +311,9 @@ class MeshMetadata:
             element["l2g_mapping"] = np.array(element["l2g_mapping"])
             element["l2r_mapping"] = np.array(element["l2r_mapping"])
             element["g2r_mapping"] = np.array(element["g2r_mapping"])
-            self.element_fields[element_type] = {}
-            self.element_fields[element_type]["owned"] = impl.field(
-                dtype=i32, shape=self.num_patches + 1)
+            self.element_fields[element_type] = {
+                "owned": impl.field(dtype=i32, shape=self.num_patches + 1)
+            }
             self.element_fields[element_type]["total"] = impl.field(
                 dtype=i32, shape=self.num_patches + 1)
             self.element_fields[element_type]["l2g"] = impl.field(
@@ -333,9 +328,9 @@ class MeshMetadata:
             to_order = relation["to_order"]
             rel_type = MeshRelationType(
                 relation_by_orders(from_order, to_order))
-            self.relation_fields[rel_type] = {}
-            self.relation_fields[rel_type]["value"] = impl.field(
-                dtype=i32, shape=len(relation["value"]))
+            self.relation_fields[rel_type] = {
+                "value": impl.field(dtype=i32, shape=len(relation["value"]))
+            }
             if from_order <= to_order:
                 self.relation_fields[rel_type]["offset"] = impl.field(
                     dtype=i32, shape=len(relation["offset"]))
@@ -364,8 +359,7 @@ class MeshMetadata:
                 self.relation_fields[rel_type]["offset"].from_numpy(
                     np.array(relation["offset"]))
 
-        self.attrs = {}
-        self.attrs["x"] = np.array(data["attrs"]["x"]).reshape(-1, 3)
+        self.attrs = {"x": np.array(data["attrs"]["x"]).reshape(-1, 3)}
 
 
 # Define the Mesh Type, stores the field type info
@@ -373,8 +367,12 @@ class MeshBuilder:
     def __init__(self, topology):
         if not lang.misc.is_extension_supported(impl.current_cfg().arch,
                                                 lang.extension.mesh):
-            raise Exception('Backend ' + str(impl.current_cfg().arch) +
-                            ' doesn\'t support MeshTaichi extension')
+            raise Exception(
+                (
+                    f'Backend {str(impl.current_cfg().arch)}'
+                    + ' doesn\'t support MeshTaichi extension'
+                )
+            )
 
         self.topology = topology
         self.verts = MeshElement(MeshElementType.Vertex, self)
@@ -476,8 +474,7 @@ class MeshElementFieldProxy:
                     self.mesh.mesh_ptr, element_type, entry_expr,
                     ConvType.l2r if element_field.attr_dict[key].reorder else
                     ConvType.l2g))  # transform index space
-            global_entry_expr_group = impl.make_expr_group(
-                *tuple([global_entry_expr]))
+            global_entry_expr_group = impl.make_expr_group(*(global_entry_expr, ))
             if isinstance(attr, MatrixField):
                 setattr(self, key,
                         _MatrixFieldElement(attr, global_entry_expr_group))
@@ -500,11 +497,14 @@ class MeshElementFieldProxy:
 
     @property
     def id(self):  # return the global non-reordered index
-        l2g_expr = impl.Expr(
-            _ti_core.get_index_conversion(self.mesh.mesh_ptr,
-                                          self.element_type, self.entry_expr,
-                                          ConvType.l2g))
-        return l2g_expr
+        return impl.Expr(
+            _ti_core.get_index_conversion(
+                self.mesh.mesh_ptr,
+                self.element_type,
+                self.entry_expr,
+                ConvType.l2g,
+            )
+        )
 
 
 class MeshRelationAccessProxy:

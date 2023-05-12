@@ -35,10 +35,7 @@ def test_ad_if():
 
     @ti.kernel
     def func(i: ti.i32):
-        if x[i] > 0:
-            y[i] = x[i]
-        else:
-            y[i] = 2 * x[i]
+        y[i] = x[i] if x[i] > 0 else 2 * x[i]
 
     x[0] = 0
     x[1] = 1
@@ -67,15 +64,9 @@ def test_ad_if_nested():
     def func():
         for i in x:
             if x[i] < 2:
-                if x[i] == 0:
-                    y[i] = 0
-                else:
-                    y[i] = z[i] * 1
+                y[i] = 0 if x[i] == 0 else z[i] * 1
             else:
-                if x[i] == 2:
-                    y[i] = z[i] * 2
-                else:
-                    y[i] = z[i] * 3
+                y[i] = z[i] * 2 if x[i] == 2 else z[i] * 3
 
     z.fill(1)
 
@@ -102,10 +93,7 @@ def test_ad_if_mutable():
     @ti.kernel
     def func(i: ti.i32):
         t = x[i]
-        if t > 0:
-            y[i] = t
-        else:
-            y[i] = 2 * t
+        y[i] = t if t > 0 else 2 * t
 
     x[0] = 0
     x[1] = 1
@@ -132,10 +120,7 @@ def test_ad_if_parallel():
     def func():
         for i in range(2):
             t = x[i]
-            if t > 0:
-                y[i] = t
-            else:
-                y[i] = 2 * t
+            y[i] = t if t > 0 else 2 * t
 
     x[0] = 0
     x[1] = 1
@@ -161,10 +146,7 @@ def test_ad_if_parallel_f64():
     def func():
         for i in range(2):
             t = x[i]
-            if t > 0:
-                y[i] = t
-            else:
-                y[i] = 2 * t
+            y[i] = t if t > 0 else 2 * t
 
     x[0] = 0
     x[1] = 1

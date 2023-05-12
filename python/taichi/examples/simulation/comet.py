@@ -61,10 +61,7 @@ def generate():
     n_tail_paticles = int(tail_paticle_scale / r.norm(1e-3)**2)
     for _ in range(n_tail_paticles):
         r = x[0]
-        if ti.static(dim == 3):
-            r = rand_unit_3d()
-        else:
-            r = rand_unit_2d()
+        r = rand_unit_3d() if ti.static(dim == 3) else rand_unit_2d()
         xi = ti.atomic_add(count[None], 1) % (N - 1) + 1
         x[xi] = x[0]
         v[xi] = r * vel_init + v[0]
@@ -92,7 +89,7 @@ gui = ti.GUI('Comet', res)
 while gui.running:
     gui.running = not gui.get_event(gui.ESCAPE)
     generate()
-    for s in range(steps):
+    for _ in range(steps):
         substep()
     render()
     gui.set_image(img)

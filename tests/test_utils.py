@@ -16,12 +16,7 @@ def get_rel_eps():
     arch = ti.lang.impl.current_cfg().arch
     if arch == ti.opengl:
         return 1e-3
-    if arch == ti.metal:
-        # Debatable, different hardware could yield different precisions
-        # On AMD Radeon Pro 5500M, 1e-6 works fine...
-        # https://github.com/taichi-dev/taichi/pull/1779
-        return 1e-4
-    return 1e-6
+    return 1e-4 if arch == ti.metal else 1e-6
 
 
 def approx(expected, **kwargs):
@@ -93,7 +88,7 @@ def expected_archs():
     Returns:
         List[taichi_core.Arch]: All expected archs on the machine.
     """
-    archs = set([cpu, cuda, metal, vulkan, opengl, cc])
+    archs = {cpu, cuda, metal, vulkan, opengl, cc}
     # TODO: now expected_archs is not called per test so we cannot test it
     archs = set(
         filter(functools.partial(is_arch_supported, use_gles=False), archs))
@@ -114,7 +109,7 @@ def expected_archs():
             expanded_wanted_archs.update(gpu)
         else:
             expanded_wanted_archs.add(_ti_core.arch_from_name(arch))
-    if len(expanded_wanted_archs) == 0:
+    if not expanded_wanted_archs:
         return list(archs)
     if want_exclude:
         expected = archs - expanded_wanted_archs

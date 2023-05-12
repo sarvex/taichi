@@ -227,7 +227,7 @@ def test_struct_for_branching():
     @ti.kernel
     def func2():
         for i, j in x:
-            if x[i, j] == 2 or x[i, j] == 4:
+            if x[i, j] in [2, 4]:
                 y[i, j] = 1
 
     @ti.kernel
@@ -305,7 +305,7 @@ def test_struct_for_continue():
     @ti.kernel
     def range_for_continue() -> ti.i32:
         cnt = 0
-        for i in range(n * n):
+        for i in range(n**2):
             if x[i]: continue
             cnt += 1
         return cnt

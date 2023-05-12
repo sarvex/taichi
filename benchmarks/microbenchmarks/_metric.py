@@ -6,12 +6,12 @@ import taichi as ti
 
 def end2end_executor(repeat, func, *args):
     # compile & warmup
-    for i in range(repeat):
+    for _ in range(repeat):
         func(*args)
 
     timer = End2EndTimer()
     timer.tick()
-    for i in range(repeat):
+    for _ in range(repeat):
         func(*args)
     time_in_s = timer.tock()
     return time_in_s * 1000 / repeat  #ms
@@ -19,10 +19,10 @@ def end2end_executor(repeat, func, *args):
 
 def kernel_executor(repeat, func, *args):
     # compile & warmup
-    for i in range(repeat):
+    for _ in range(repeat):
         func(*args)
     ti.clear_kernel_profile_info()
-    for i in range(repeat):
+    for _ in range(repeat):
         func(*args)
     return ti.kernel_profiler_total_time() * 1000 / repeat  #ms
 
@@ -38,9 +38,9 @@ class MetricType(BenchmarkItem):
 
     @staticmethod
     def init_taichi(arch: str, tag_list: list):
-        if set(['kernel_elapsed_time_ms']).issubset(tag_list):
+        if {'kernel_elapsed_time_ms'}.issubset(tag_list):
             ti.init(kernel_profiler=True, arch=get_ti_arch(arch))
-        elif set(['end2end_time_ms']).issubset(tag_list):
+        elif {'end2end_time_ms'}.issubset(tag_list):
             ti.init(kernel_profiler=False, arch=get_ti_arch(arch))
         else:
             return False

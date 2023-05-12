@@ -286,8 +286,7 @@ def main(arguments=None):
             if os == "manylinux2014":
                 base_block = CPU_MANYLINUX_BASE_BLOCK
                 install_block = CPU_YUM_INSTALL_BLOCK
-                scripts_block = SCRIPTS_BLOCK.format(
-                    script=f"manylinux_build_wheel.sh")
+                scripts_block = SCRIPTS_BLOCK.format(script="manylinux_build_wheel.sh")
 
                 dockerfile = reduce(
                     lambda x, y: x + y,
@@ -317,6 +316,7 @@ def main(arguments=None):
             info(f"Storing at: {filename}")
             with filename.open("w") as fp:
                 fp.write(dockerfile)
+
     else:
         info("Generating Dockerfile(s) for GPU.")
 

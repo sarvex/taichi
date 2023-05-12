@@ -167,7 +167,7 @@ while window.running:
     attractor_pos[None] = mouse_pos
     attractor_strength[None] = window.is_pressed(
         ti.ui.LMB) - window.is_pressed(ti.ui.RMB)
-    for i in range(50):
+    for _ in range(50):
         with ti.Tape(loss=U):
             update_U()
         advance()

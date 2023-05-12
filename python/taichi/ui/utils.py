@@ -19,7 +19,7 @@ def get_field_info(field):
         info.field_source = _ti_core.FieldSource.TaichiVulkan
     else:
         raise Exception("unsupported taichi backend")
-    info.shape = [n for n in field.shape]
+    info.shape = list(field.shape)
 
     info.dtype = field.dtype
     info.snode = field.snode.ptr
